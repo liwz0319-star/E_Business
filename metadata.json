@@ -1,0 +1,8 @@
+{
+  "name": "CommerceAI Assistant",
+  "description": "An advanced AI-powered e-commerce dashboard for generating product copy, listing images, and ad videos using the latest Gemini models.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
