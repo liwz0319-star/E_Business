@@ -8,14 +8,36 @@ export enum GenerationType {
   SEARCH = 'Market Insight'
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const mockData = (type: GenerationType) => {
+    switch(type) {
+        case GenerationType.IMAGE: return "https://picsum.photos/800/450";
+        case GenerationType.VIDEO: return "https://www.w3schools.com/html/mov_bbb.mp4";
+        case GenerationType.SEARCH: return "Our market analysis shows a 15% increase in demand for eco-friendly tech accessories. Competitors like BrandX have recently dropped prices, suggesting a saturated entry-level market.";
+        default: return "Transform your daily routine with the all-new AeroStream Headphones. Engineered for silence, designed for comfort. Experience the future of sound with active noise cancellation and 40-hour battery life. Order now and elevate your audio experience.";
+    }
+}
 
 export const generateContent = async (prompt: string, type: GenerationType): Promise<any> => {
-  // Simple check for API key
-  if (!process.env.API_KEY) {
-      // Return mock data for demo if no API key is present
+  // Handle mandatory key selection for Veo models (Video)
+  if (type === GenerationType.VIDEO) {
+    const aistudio = (window as any).aistudio;
+    if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
+      const hasKey = await aistudio.hasSelectedApiKey();
+      if (!hasKey) {
+        await aistudio.openSelectKey();
+        // Proceeding assuming selection was triggered as per guidelines
+      }
+    }
+  }
+
+  // Create a new GoogleGenAI instance right before the call to ensure latest API key
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+      console.warn("API Key is missing. Using mock data for demo.");
       return mockData(type);
   }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     switch (type) {
@@ -29,18 +51,24 @@ export const generateContent = async (prompt: string, type: GenerationType): Pro
         return imagePart ? `data:image/png;base64,${imagePart.inlineData.data}` : mockData(type);
 
       case GenerationType.VIDEO:
-        // Veo model requires selected key usually, but following standard flow
         let op = await ai.models.generateVideos({
           model: 'veo-3.1-fast-generate-preview',
           prompt: prompt,
           config: { resolution: '720p', aspectRatio: '16:9' }
         });
+        
         while (!op.done) {
-          await new Promise(r => setTimeout(r, 5000));
+          // Poll every 10 seconds for video operations as per rules
+          await new Promise(r => setTimeout(r, 10000));
           op = await ai.operations.getVideosOperation({ operation: op });
         }
+        
         const downloadLink = op.response?.generatedVideos?.[0]?.video?.uri;
-        const vidResponse = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+        if (!downloadLink) throw new Error("Video generation complete but no URI returned.");
+        
+        const vidResponse = await fetch(`${downloadLink}&key=${apiKey}`);
+        if (!vidResponse.ok) throw new Error(`Failed to download video: ${vidResponse.statusText}`);
+        
         const blob = await vidResponse.blob();
         return URL.createObjectURL(blob);
 
@@ -58,22 +86,24 @@ export const generateContent = async (prompt: string, type: GenerationType): Pro
           model: 'gemini-3-flash-preview',
           contents: prompt,
           config: {
-              systemInstruction: "You are a world-class e-commerce copywriter. Create high-converting content."
+              systemInstruction: "You are a world-class e-commerce copywriter. Create high-converting content for product listings and ads."
           }
         });
         return textRes.text;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
-    return mockData(type); // Fallback for demo environments
+    
+    const errorMsg = error.message || "";
+    // If the error is 403 or entity not found, it likely needs key re-selection
+    if (errorMsg.includes("403") || errorMsg.includes("permission") || errorMsg.includes("Requested entity was not found")) {
+      const aistudio = (window as any).aistudio;
+      if (aistudio && typeof aistudio.openSelectKey === 'function') {
+        await aistudio.openSelectKey();
+      }
+    }
+    
+    // Fallback to mock data for demo safety
+    return mockData(type);
   }
 };
-
-const mockData = (type: GenerationType) => {
-    switch(type) {
-        case GenerationType.IMAGE: return "https://picsum.photos/800/450";
-        case GenerationType.VIDEO: return "https://www.w3schools.com/html/mov_bbb.mp4";
-        case GenerationType.SEARCH: return "Our market analysis shows a 15% increase in demand for eco-friendly tech accessories. Competitors like BrandX have recently dropped prices, suggesting a saturated entry-level market.";
-        default: return "Transform your daily routine with the all-new AeroStream Headphones. Engineered for silence, designed for comfort. Experience the future of sound with active noise cancellation and 40-hour battery life. Order now and elevate your audio experience.";
-    }
-}
