@@ -4,9 +4,10 @@ import React from 'react';
 interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  onNotificationClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode }) => {
+const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode, onNotificationClick }) => {
   return (
     <header className="flex items-center justify-between px-8 py-4 z-10">
       <div className="flex items-center gap-2 text-slate-400 text-sm">
@@ -21,7 +22,10 @@ const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode }) => {
         >
           <span className="material-icons-round">{darkMode ? 'light_mode' : 'dark_mode'}</span>
         </button>
-        <button className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-colors relative">
+        <button 
+          onClick={onNotificationClick}
+          className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-colors relative"
+        >
           <span className="material-icons-round">notifications</span>
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>

@@ -5,6 +5,8 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import GeminiResult from './components/GeminiResult';
 import PricingModal from './components/PricingModal';
+import UserProfileModal from './components/UserProfileModal';
+import NotificationModal from './components/NotificationModal';
 import Gallery from './components/Gallery';
 import Insights from './components/Insights';
 import Settings from './components/Settings';
@@ -29,6 +31,8 @@ const App: React.FC = () => {
   const [activeGenerationType, setActiveGenerationType] = useState<GenerationType | null>(null);
   const [result, setResult] = useState<{ type: GenerationType; content: string | string[]; title?: string } | null>(null);
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   
@@ -144,13 +148,20 @@ const App: React.FC = () => {
         onNavigate={navigateTo}
         onProjectClick={openAssetDetail}
         onUpgradeClick={() => setIsPricingModalOpen(true)}
+        onProfileClick={() => setIsUserProfileModalOpen(true)}
         selectedProjectName={selectedAsset?.title}
       />
       
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/10 dark:bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
         
-        {currentView !== 'chat' && <Header darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} />}
+        {currentView !== 'chat' && (
+          <Header 
+            darkMode={darkMode} 
+            onToggleDarkMode={() => setDarkMode(!darkMode)} 
+            onNotificationClick={() => setIsNotificationModalOpen(true)}
+          />
+        )}
         
         {currentView === 'home' && (
           <div className="flex-1 overflow-y-auto sidebar-scroll px-8 pb-32">
@@ -264,6 +275,13 @@ const App: React.FC = () => {
                 <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                   <span className="material-icons-round">{darkMode ? 'light_mode' : 'dark_mode'}</span>
                 </button>
+                <button 
+                  onClick={() => setIsNotificationModalOpen(true)}
+                  className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+                >
+                  <span className="material-symbols-outlined">notifications</span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
                 <button className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                   <span className="material-symbols-outlined">more_vert</span>
                 </button>
@@ -366,6 +384,8 @@ const App: React.FC = () => {
       </main>
 
       {isPricingModalOpen && <PricingModal onClose={() => setIsPricingModalOpen(false)} />}
+      {isUserProfileModalOpen && <UserProfileModal onClose={() => setIsUserProfileModalOpen(false)} />}
+      {isNotificationModalOpen && <NotificationModal onClose={() => setIsNotificationModalOpen(false)} />}
     </div>
   );
 };

@@ -7,10 +7,11 @@ interface SidebarProps {
   onNavigate: (view: AppView) => void;
   onProjectClick?: (project: any) => void;
   onUpgradeClick?: () => void;
+  onProfileClick?: () => void;
   selectedProjectName?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onProjectClick, onUpgradeClick, selectedProjectName }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onProjectClick, onUpgradeClick, onProfileClick, selectedProjectName }) => {
   const recentProjects = [
     { name: "Summer Campaign", color: "bg-primary" },
     { name: "Nike Air Promo", color: "bg-blue-400" },
@@ -101,7 +102,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onProjectCli
             Upgrade Now
           </button>
         </div>
-        <div className="flex items-center gap-3 px-2 pt-2 hover:bg-[#f6f8f8] dark:hover:bg-[#2a3b3b] rounded-lg transition-colors cursor-pointer py-2 group">
+        <div 
+          onClick={onProfileClick}
+          className="flex items-center gap-3 px-2 pt-2 hover:bg-[#f6f8f8] dark:hover:bg-[#2a3b3b] rounded-lg transition-colors cursor-pointer py-2 group"
+        >
           <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border border-[#e6eaea] dark:border-[#2a3b3b]" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAE3z6Fwx1BMbzVeEg57dW00cRANQ7c09M-W0l8XiL0eD24zr7W1anLy3fK1Uqt0_o_37ZIl_kntuGnVPUJYDZsDz9BFLBnb5NYeJIqnvK1COR3I8LpReBa-eOgYCYzKyJNJdpwCQjHxdXFB6jvSVIKoBHY2uGojnn_abTkQsl1E9emDBs_zlZmejk-1x_IIG38Oolxu7vOfvSsFBN5lasA0OqlPulmY01Y-w_JQKofREHUlGUyJsLZFQtsF3VPi5kDN5ejdqm7ZwA")' }}></div>
           <div className="flex flex-col justify-center overflow-hidden">
             <h1 className="text-[#0f1a19] dark:text-white text-sm font-semibold leading-none truncate group-hover:text-primary transition-colors">Sarah Connor</h1>
