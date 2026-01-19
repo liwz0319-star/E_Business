@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import ImageEditor from './ImageEditor';
 
 interface ImageDetailProps {
   image: any;
@@ -9,6 +10,7 @@ interface ImageDetailProps {
 const ImageDetail: React.FC<ImageDetailProps> = ({ image, onClose }) => {
   const [zoom, setZoom] = useState(100);
   const [isLiked, setIsLiked] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleAction = (label: string) => {
     alert(`Image Action: ${label}`);
@@ -19,6 +21,16 @@ const ImageDetail: React.FC<ImageDetailProps> = ({ image, onClose }) => {
     navigator.clipboard.writeText(promptText);
     alert("Prompt copied to clipboard!");
   };
+
+  const handleSaveEdit = (newUrl: string) => {
+    // Logic to update the image in the parent/gallery would go here
+    setIsEditing(false);
+    alert("Image saved successfully!");
+  };
+
+  if (isEditing) {
+    return <ImageEditor image={image} onClose={() => setIsEditing(false)} onSave={handleSaveEdit} />;
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/10 backdrop-blur-md flex items-center justify-center p-4 md:p-8 font-display transition-colors">
@@ -33,7 +45,7 @@ const ImageDetail: React.FC<ImageDetailProps> = ({ image, onClose }) => {
                alt={image?.title || "AI Generated Preview"} 
                className="max-w-full max-h-full object-contain rounded-sm shadow-xl transition-all duration-500 cursor-zoom-in" 
                style={{ transform: `scale(${zoom / 100})` }}
-               src={image?.url || "https://lh3.googleusercontent.com/aida-public/AB6AXuCpSlHIN1IKvTeY0mdkVRYVCoTOjXPDgQOK8XlWMRcSCL3nS1mle71siP_jAKAWG5uypzOWxP1R3yaTWXO4DRPWe5GiazkUobAJlHXuAdMm64W6GQWgShc4QRlpBZJigcRpOt_8MhqSqwiJENt3GWVkFIj73azd8IpcHoscdcr1l4Pv4Q7G85KD2ZMoIGD_bi_FkH8bSSThxFSQ4naIr3ELXD0SS_hv5sGLzam0geA_lYQup95v_tCeNvlZ8ttpCQugs60NQB9vIfs"}
+               src={image?.url || image}
              />
           </div>
 
@@ -127,13 +139,6 @@ const ImageDetail: React.FC<ImageDetailProps> = ({ image, onClose }) => {
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Seed</span>
                   <span className="text-sm font-bold text-slate-900 dark:text-white font-mono">3948210492</span>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 col-span-2">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Guidance Scale</span>
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full mt-3 relative overflow-hidden">
-                    <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: '70%' }}></div>
-                  </div>
-                  <span className="text-xs text-slate-400 mt-2 block text-right font-bold">7.0</span>
-                </div>
               </div>
             </div>
           </div>
@@ -149,7 +154,7 @@ const ImageDetail: React.FC<ImageDetailProps> = ({ image, onClose }) => {
             </button>
             <div className="flex gap-3">
               <button 
-                onClick={() => handleAction('Edit in Workspace')}
+                onClick={() => setIsEditing(true)}
                 className="flex-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <span className="material-symbols-outlined text-[18px]">edit_square</span>

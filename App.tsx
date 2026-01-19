@@ -14,13 +14,14 @@ import AssetDetail from './components/AssetDetail';
 import VideoDetail from './components/VideoDetail';
 import ImageDetail from './components/ImageDetail';
 import ProjectTimeline from './components/ProjectTimeline';
+import Login from './components/Login';
 import { generateContent, GenerationType } from './services/geminiService';
 
-export type AppView = 'home' | 'chat' | 'gallery' | 'insights' | 'settings' | 'help-support' | 'projects' | 'asset-detail' | 'video-detail' | 'image-detail' | 'project-timeline';
+export type AppView = 'login' | 'home' | 'chat' | 'gallery' | 'insights' | 'settings' | 'help-support' | 'projects' | 'asset-detail' | 'video-detail' | 'image-detail' | 'project-timeline';
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [currentView, setCurrentView] = useState<AppView>('home');
+  const [currentView, setCurrentView] = useState<AppView>('login');
   const [prompt, setPrompt] = useState('');
   const [userMessage, setUserMessage] = useState<string | null>(null);
   const [sentUserImage, setSentUserImage] = useState<string | null>(null);
@@ -90,7 +91,7 @@ const App: React.FC = () => {
 
   const navigateTo = (view: AppView) => {
     setCurrentView(view);
-    if (view !== 'chat') {
+    if (view !== 'chat' && view !== 'login') {
         setResult(null);
         setUserMessage(null);
         setSentUserImage(null);
@@ -130,6 +131,11 @@ const App: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  // If current view is login, render only the Login component
+  if (currentView === 'login') {
+    return <Login onLogin={() => navigateTo('home')} />;
+  }
 
   return (
     <div className="flex h-screen w-full transition-colors duration-300 bg-background-light dark:bg-background-dark font-display overflow-hidden text-text-main dark:text-white">
