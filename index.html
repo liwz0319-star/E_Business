@@ -1,14 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CommerceAI - AI E-commerce Assistant</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Manrope:wght@400;500;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Manrope:wght@400;500;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -57,38 +60,50 @@
         };
     </script>
     <style>
+        html {
+            font-size: 75%;
+            /* Scale down further to 12px (approx) */
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
-        .sidebar-scroll::-webkit-scrollbar {
-            width: 5px;
-        }
-        .sidebar-scroll::-webkit-scrollbar-track {
+
+        /* Globally hide scrollbars */
+        ::-webkit-scrollbar {
+            display: none;
+            width: 0px;
             background: transparent;
         }
-        .sidebar-scroll::-webkit-scrollbar-thumb {
-            background-color: rgba(156, 163, 175, 0.3);
-            border-radius: 20px;
+
+        /* Keep specific utility if needed but make sure it hides too */
+        .sidebar-scroll::-webkit-scrollbar {
+            display: none;
         }
+
         .aurora-gradient {
             background: radial-gradient(circle at 50% 50%, rgba(129, 216, 208, 0.15) 0%, rgba(94, 196, 186, 0.05) 40%, rgba(0, 0, 0, 0) 70%);
         }
+
         .dark .aurora-gradient {
             background: radial-gradient(circle at 50% 50%, rgba(129, 216, 208, 0.25) 0%, rgba(94, 196, 186, 0.1) 40%, rgba(0, 0, 0, 0) 70%);
         }
+
         .glass-blur {
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }
+
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
+
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react/": "https://esm.sh/react@^19.2.3/",
@@ -99,7 +114,11 @@
 }
 </script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 min-h-screen overflow-hidden">
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 min-h-screen overflow-hidden">
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

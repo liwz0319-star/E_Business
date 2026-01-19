@@ -10,7 +10,7 @@ interface Message {
 
 const HelpSupport: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', text: 'Hi there! 👋 Welcome to CommerceAI support. How can we help you with your store today?', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -63,7 +63,7 @@ const HelpSupport: React.FC = () => {
     try {
       const chat = getChat();
       const response = await chat.sendMessage({ message: text });
-      
+
       const aiMessage: Message = {
         role: 'model',
         text: response.text || "I'm sorry, I couldn't process that. Please try again.",
@@ -108,15 +108,15 @@ const HelpSupport: React.FC = () => {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <span className="material-symbols-outlined text-primary text-[28px]">search</span>
                 </div>
-                <input 
+                <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAction(`Searching for: ${searchQuery}`)}
-                  className="w-full h-14 pl-14 pr-32 rounded-xl bg-white dark:bg-slate-800 border-none shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-primary text-slate-900 dark:text-white placeholder:text-slate-400 text-base transition-all" 
-                  placeholder="Search for answers, articles, and guides..." 
+                  className="w-full h-14 pl-14 pr-32 rounded-xl bg-white dark:bg-slate-800 border-none shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-primary text-slate-900 dark:text-white placeholder:text-slate-400 text-base transition-all"
+                  placeholder="Search for answers, articles, and guides..."
                   type="text"
                 />
-                <button 
+                <button
                   onClick={() => handleAction(`Searching for: ${searchQuery}`)}
                   className="absolute right-3 bg-primary hover:bg-secondary text-white px-5 py-2 rounded-lg font-bold shadow-md transition-all active:scale-95"
                 >
@@ -128,7 +128,7 @@ const HelpSupport: React.FC = () => {
             {/* Topic Categories */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               {categories.map((cat, i) => (
-                <button 
+                <button
                   key={i}
                   onClick={() => handleAction(cat.title)}
                   className="flex flex-col text-left gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 p-6 hover:shadow-xl hover:-translate-y-1 transition-all group"
@@ -152,7 +152,7 @@ const HelpSupport: React.FC = () => {
               </div>
               <div className="flex flex-col gap-3">
                 {popularArticles.map((art, i) => (
-                  <button 
+                  <button
                     key={i}
                     onClick={() => handleAction(`Read: ${art.title}`)}
                     className="flex items-center gap-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 p-4 rounded-xl hover:border-primary hover:shadow-md transition-all group text-left"
@@ -172,13 +172,13 @@ const HelpSupport: React.FC = () => {
               <h3 className="text-2xl font-bold mb-3">Still need help?</h3>
               <p className="text-slate-300 mb-6 max-w-xl mx-auto">Our specialized AI support team is available 24/7 to help you scale your store's creative output.</p>
               <div className="flex flex-wrap justify-center gap-4">
-                <button 
+                <button
                   onClick={() => setIsChatOpen(true)}
                   className="bg-primary hover:bg-secondary text-slate-900 px-6 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95"
                 >
                   Start Live Chat
                 </button>
-                <button 
+                <button
                   onClick={() => handleAction('Open Email Support')}
                   className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold border border-white/20 transition-all active:scale-95"
                 >
@@ -192,11 +192,11 @@ const HelpSupport: React.FC = () => {
 
       {/* Chat Widget */}
       {isChatOpen && (
-        <div 
+        <div
           className={`fixed bottom-6 right-6 z-50 flex flex-col w-[360px] md:w-[400px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 font-display transition-all duration-500 ease-in-out ${isMinimized ? 'h-[72px]' : 'h-[600px]'}`}
         >
           {/* Chat Header */}
-          <div 
+          <div
             onClick={() => isMinimized && setIsMinimized(false)}
             className={`bg-primary p-4 flex items-center justify-between shrink-0 shadow-md relative z-10 transition-colors ${isMinimized ? 'cursor-pointer hover:bg-secondary' : ''}`}
           >
@@ -216,14 +216,14 @@ const HelpSupport: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
                 className="text-slate-900/60 hover:text-slate-900 hover:bg-white/20 rounded-full p-1.5 transition-all"
                 title={isMinimized ? "Expand Chat" : "Minimize Chat"}
               >
                 <span className="material-symbols-outlined text-[24px]">{isMinimized ? 'keyboard_arrow_up' : 'remove'}</span>
               </button>
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); setIsChatOpen(false); }}
                 className="text-slate-900/60 hover:text-slate-900 hover:bg-white/20 rounded-full p-1.5 transition-all"
                 title="Close Chat"
@@ -240,7 +240,7 @@ const HelpSupport: React.FC = () => {
                 <div className="flex justify-center my-2">
                   <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full shadow-sm">Today</span>
                 </div>
-                
+
                 {messages.map((msg, idx) => (
                   <div key={idx} className={`flex gap-3 max-w-[90%] ${msg.role === 'user' ? 'self-end flex-row-reverse' : ''}`}>
                     {msg.role === 'model' && (
@@ -275,7 +275,7 @@ const HelpSupport: React.FC = () => {
               {/* Action Suggestion Pills */}
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 px-4 pt-2 bg-white dark:bg-slate-900 border-t border-slate-50 dark:border-slate-800/50">
                 {["Billing Issue", "Image Help", "Export Video", "API Access"].map((suggest, i) => (
-                  <button 
+                  <button
                     key={i}
                     onClick={() => sendMessage(suggest)}
                     className="whitespace-nowrap px-4 py-2 rounded-full border border-primary/30 bg-primary/5 text-primary-dark text-xs font-bold hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95"
@@ -288,29 +288,29 @@ const HelpSupport: React.FC = () => {
               {/* Message Input Container */}
               <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0">
                 <div className="relative flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-2 py-1.5 focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all shadow-inner">
-                  <button 
+                  <button
                     onClick={() => handleAction('Attach File to Chat')}
                     className="p-2 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-white dark:hover:bg-slate-700"
                     title="Attach File"
                   >
                     <span className="material-symbols-outlined text-[22px] rotate-45">attach_file</span>
                   </button>
-                  <input 
+                  <input
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage(inputValue)}
-                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 px-2 h-10" 
-                    placeholder="Ask Sarah anything..." 
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 px-2 h-10"
+                    placeholder="Ask Sarah anything..."
                     type="text"
                   />
-                  <button 
+                  <button
                     onClick={() => handleAction('Open Emoji Picker')}
                     className="p-2 text-slate-400 hover:text-yellow-500 transition-colors rounded-xl hover:bg-white dark:hover:bg-slate-700 mr-1"
                     title="Emojis"
                   >
                     <span className="material-symbols-outlined text-[22px]">sentiment_satisfied</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => sendMessage(inputValue)}
                     disabled={!inputValue.trim()}
                     className={`size-10 rounded-xl flex items-center justify-center text-slate-900 transition-all shadow-md ${inputValue.trim() ? 'bg-primary hover:bg-secondary hover:shadow-glow' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}`}
@@ -332,7 +332,7 @@ const HelpSupport: React.FC = () => {
 
       {/* Reopen Chat Button (Floating Action Button) */}
       {!isChatOpen && (
-        <button 
+        <button
           onClick={() => { setIsChatOpen(true); setIsMinimized(false); }}
           className="fixed bottom-8 right-8 z-50 group flex items-center gap-3 bg-primary hover:bg-secondary text-slate-900 pl-4 pr-6 py-4 rounded-2xl shadow-2xl transition-all transform hover:scale-105 active:scale-95 animate-fade-in-up"
         >
@@ -341,7 +341,7 @@ const HelpSupport: React.FC = () => {
             <span className="absolute -top-1 -right-1 size-3 bg-red-500 border-2 border-primary rounded-full animate-ping"></span>
             <span className="absolute -top-1 -right-1 size-3 bg-red-500 border-2 border-primary rounded-full"></span>
           </div>
-          <span className="font-bold text-sm">Chat with Sarah</span>
+          <span className="font-bold text-sm">need some helps?</span>
         </button>
       )}
     </div>
