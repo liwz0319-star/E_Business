@@ -1,0 +1,19 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.2.0
+asyncio: mode=strict, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 8 items
+
+tests\test_auth_integration.py F
+
+================================== FAILURES ===================================
+______ TestAuthIntegrationFlow.test_register_login_access_protected_flow ______
+tests\test_auth_integration.py:41: in test_register_login_access_protected_flow
+    assert register_json["user"]["is_active"] is True
+E   KeyError: 'is_active'
+=========================== short test summary info ===========================
+FAILED tests/test_auth_integration.py::TestAuthIntegrationFlow::test_register_login_access_protected_flow
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed in 1.04s ==============================

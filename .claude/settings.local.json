@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(gh pr list:*)",
+      "Bash(serena:*)",
+      "Bash(serena --help:*)",
+      "Bash(typescript-language-server:*)",
+      "Bash(npm install:*)",
+      "Bash(tsc:*)",
+      "Bash(pyright:*)",
+      "Bash(claude plugins install:*)",
+      "Bash(git --version)",
+      "Bash(where:*)",
+      "Bash(set:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(setx:*)",
+      "Bash(cmd:*)",
+      "Bash(\"E:\\\\Git\\\\usr\\\\bin\\\\bash.exe\" -c \"claude plugins install OthmanAdi/planning-with-files\")",
+      "Bash(CLAUDE_CODE_GIT_BASH_PATH=E:\\\\Git\\\\usr\\\\bin\\\\bash.exe \"E:\\\\Git\\\\usr\\\\bin\\\\bash.exe\" -c \"cd /f/AAA\\\\ Work\\\\ AIproject/E_Business && claude plugins install OthmanAdi/planning-with-files\")",
+      "Bash(git rev-parse:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(find:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "agentvibes"
+  ]
+}
