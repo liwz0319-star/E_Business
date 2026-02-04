@@ -54,6 +54,18 @@ class Settings(BaseSettings):
         default=None,
         description="DeepSeek API key for AI generation"
     )
+    deepseek_model: str = Field(
+        default="deepseek-chat",
+        description="DeepSeek model name"
+    )
+    deepseek_max_tokens: int = Field(
+        default=2000,
+        description="Maximum tokens for DeepSeek generation"
+    )
+    deepseek_timeout: int = Field(
+        default=120,
+        description="Timeout in seconds for DeepSeek API calls"
+    )
     
     # MinIO Configuration
     minio_endpoint: str = Field(
@@ -91,6 +103,10 @@ class Settings(BaseSettings):
     log_level: str = Field(
         default="INFO",
         description="Logging level"
+    )
+    error_log_cooldown_seconds: int = Field(
+        default=5,
+        description="Cooldown in seconds between same error logs"
     )
     
     @field_validator("app_env")

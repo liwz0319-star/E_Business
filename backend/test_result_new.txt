@@ -1,0 +1,136 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 1 item
+
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_thought_includes_node_name FAILED [100%]
+
+================================== FAILURES ===================================
+___________ TestSocketIOEvents.test_emit_thought_includes_node_name ___________
+
+self = <test_copywriting_agent.TestSocketIOEvents object at 0x000001F655CD14D0>
+mock_socket_manager = <MagicMock name='socket_manager' id='2157525966224'>
+mock_provider_factory = (<MagicMock name='ProviderFactory' id='2157533672592'>, <MagicMock name='ProviderFactory.get_provider()' id='2157533672464'>)
+sample_state = {'brand_guidelines': 'Professional and modern tone', 'critique': None, 'current_stage': None, 'draft': None, ...}
+
+    @pytest.mark.asyncio
+    async def test_emit_thought_includes_node_name(
+        self,
+        mock_socket_manager,
+        mock_provider_factory,
+        sample_state,
+    ):
+        """Verify emit_thought is called with correct node_name parameter."""
+        mock_factory, mock_generator = mock_provider_factory
+        mock_response = MagicMock()
+        mock_response.content = "Plan content"
+        mock_generator.generate = AsyncMock(return_value=mock_response)
+    
+>       agent = CopywritingAgent()
+                ^^^^^^^^^^^^^^^^^^
+
+tests\application\agents\test_copywriting_agent.py:366: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:94: in __init__
+    self._graph = self._build_graph()
+                  ^^^^^^^^^^^^^^^^^^^
+app\application\agents\copywriting_agent.py:106: in _build_graph
+    workflow.add_node("plan", self.plan_node)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <langgraph.graph.state.StateGraph object at 0x000001F657069450>
+node = 'plan'
+action = <bound method CopywritingAgent.plan_node of <app.application.agents.copywriting_agent.CopywritingAgent object at 0x000001F657069310>>
+
+    def add_node(
+        self,
+        node: Union[str, RunnableLike],
+        action: Optional[RunnableLike] = None,
+        *,
+        metadata: Optional[dict[str, Any]] = None,
+        input: Optional[Type[Any]] = None,
+        retry: Optional[RetryPolicy] = None,
+        destinations: Optional[Union[dict[str, str], tuple[str]]] = None,
+    ) -> Self:
+        """Adds a new node to the state graph.
+    
+        Will take the name of the function/runnable as the node name.
+    
+        Args:
+            node (Union[str, RunnableLike]): The function or runnable this node will run.
+            action (Optional[RunnableLike]): The action associated with the node. (default: None)
+            metadata (Optional[dict[str, Any]]): The metadata associated with the node. (default: None)
+            input (Optional[Type[Any]]): The input schema for the node. (default: the graph's input schema)
+            retry (Optional[RetryPolicy]): The policy for retrying the node. (default: None)
+            destinations (Optional[Union[dict[str, str], tuple[str]]]): Destinations that indicate where a node can route to.
+                This is useful for edgeless graphs with nodes that return `Command` objects.
+                If a dict is provided, the keys will be used as the target node names and the values will be used as the labels for the edges.
+                If a tuple is provided, the values will be used as the target node names.
+                NOTE: this is only used for graph rendering and doesn't have any effect on the graph execution.
+        Raises:
+            ValueError: If the key is already being used as a state key.
+    
+        Examples:
+            ```pycon
+            >>> from langgraph.graph import START, StateGraph
+            ...
+            >>> def my_node(state, config):
+            ...    return {"x": state["x"] + 1}
+            ...
+            >>> builder = StateGraph(dict)
+            >>> builder.add_node(my_node)  # node name will be 'my_node'
+            >>> builder.add_edge(START, "my_node")
+            >>> graph = builder.compile()
+            >>> graph.invoke({"x": 1})
+            {'x': 2}
+            ```
+            Customize the name:
+    
+            ```pycon
+            >>> builder = StateGraph(dict)
+            >>> builder.add_node("my_fair_node", my_node)
+            >>> builder.add_edge(START, "my_fair_node")
+            >>> graph = builder.compile()
+            >>> graph.invoke({"x": 1})
+            {'x': 2}
+            ```
+    
+        Returns:
+            Self: The instance of the state graph, allowing for method chaining.
+        """
+        if not isinstance(node, str):
+            action = node
+            if isinstance(action, Runnable):
+                node = action.get_name()
+            else:
+                node = getattr(action, "__name__", action.__class__.__name__)
+            if node is None:
+                raise ValueError(
+                    "Node name must be provided if action is not a function"
+                )
+        if node in self.channels:
+>           raise ValueError(f"'{node}' is already being used as a state key")
+E           ValueError: 'plan' is already being used as a state key
+
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\langgraph\graph\state.py:341: ValueError
+============================== warnings summary ===============================
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_thought_includes_node_name
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_thought_includes_node_name
+======================== 1 failed, 1 warning in 0.74s =========================

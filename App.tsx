@@ -17,9 +17,10 @@ import VideoDetail from './components/VideoDetail';
 import ImageDetail from './components/ImageDetail';
 import ProjectTimeline from './components/ProjectTimeline';
 import Login from './components/Login';
+import Signup from './components/Signup';
 import { generateContent, GenerationType } from './services/geminiService';
 
-export type AppView = 'login' | 'home' | 'chat' | 'gallery' | 'insights' | 'settings' | 'help-support' | 'projects' | 'asset-detail' | 'video-detail' | 'image-detail' | 'project-timeline';
+export type AppView = 'login' | 'signup' | 'home' | 'chat' | 'gallery' | 'insights' | 'settings' | 'help-support' | 'projects' | 'asset-detail' | 'video-detail' | 'image-detail' | 'project-timeline';
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -138,7 +139,12 @@ const App: React.FC = () => {
 
   // If current view is login, render only the Login component
   if (currentView === 'login') {
-    return <Login onLogin={() => navigateTo('home')} />;
+    return <Login onLogin={() => navigateTo('home')} onSignup={() => navigateTo('signup')} />;
+  }
+
+  // If current view is signup, render only the Signup component
+  if (currentView === 'signup') {
+    return <Signup onSignIn={() => navigateTo('login')} />;
   }
 
   return (

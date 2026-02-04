@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 
 interface LoginProps {
   onLogin: () => void;
+  onSignup: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, onSignup }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -17,8 +18,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="flex min-h-screen w-full flex-row bg-background-light dark:bg-background-dark font-display overflow-hidden">
       {/* Left Side: Visual/Hero */}
-      <div 
-        className="hidden lg:flex relative w-1/2 bg-cover bg-center overflow-hidden" 
+      <div
+        className="hidden lg:flex relative w-1/2 bg-cover bg-center overflow-hidden"
         style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAzvzBAybx5SkQhXAwRqhIuaAu6jI5s3rrFlQalkaPsHl-rMM_n7kmTPsrSDIb3HpxQYun_Uw9zTHU-nHShLp6swz0MSnH53h0696bPSDUHNpEHm9h-3xrGlgbpYhNmGdiZdX3OhpGaBVzzCv3H0IbPdZctV2lpRz0IXKfMoONJ3J2dGQd4fMO9Y3RPOq93xRD35XjPvmANWAkha54zxEths97aKUPyzFM6NZXxlcctjLuPXLjPtOl2EFEokFLYhc1mMAQyeOmcwHs")' }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
@@ -31,7 +32,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
           <div className="max-w-lg">
             <h1 className="text-4xl font-bold leading-tight text-white tracking-tight mb-4">
-              Turn one photo into <br/>
+              Turn one photo into <br />
               <span className="text-primary">infinite content.</span>
             </h1>
             <p className="text-lg text-white/80 font-medium">
@@ -64,30 +65,30 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <label className="block text-sm font-medium leading-6 text-text-main dark:text-white mb-2" htmlFor="email">
                 Email address
               </label>
-              <input 
-                id="email" 
-                name="email" 
-                type="email" 
-                required 
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border-0 py-3.5 text-text-main shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-slate-800 dark:text-white" 
-                placeholder="name@company.com" 
+                className="block w-full rounded-lg border-0 py-3.5 text-text-main shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-slate-800 dark:text-white"
+                placeholder="name@company.com"
               />
             </div>
             <div>
               <label className="block text-sm font-medium leading-6 text-text-main dark:text-white mb-2" htmlFor="password">
                 Password
               </label>
-              <input 
-                id="password" 
-                name="password" 
-                type="password" 
-                required 
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-lg border-0 py-3.5 text-text-main shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-slate-800 dark:text-white" 
-                placeholder="••••••••" 
+                className="block w-full rounded-lg border-0 py-3.5 text-text-main shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-slate-800 dark:text-white"
+                placeholder="••••••••"
               />
             </div>
 
@@ -105,8 +106,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="flex w-full justify-center rounded-lg bg-primary px-3 py-3.5 text-sm font-bold leading-6 text-slate-900 shadow-sm hover:bg-primary-hover transition-colors"
             >
               Sign in
@@ -139,7 +140,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
           </div>
           <p className="mt-10 text-center text-sm text-slate-500 dark:text-slate-400">
-            Don't have an account? <a className="font-semibold leading-6 text-primary hover:text-primary-hover" href="#">Sign up</a>
+            Don't have an account? <button className="font-semibold leading-6 text-primary hover:text-primary-hover" onClick={onSignup}>Sign up</button>
           </p>
         </div>
       </div>

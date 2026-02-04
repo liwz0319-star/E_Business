@@ -1,0 +1,1749 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 15 items
+
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_emits_reasoning_content FAILED [  6%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_fallback_on_error FAILED [ 13%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_stream_callback_handles_emit_error_gracefully FAILED [ 20%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_plan_node_uses_streaming FAILED [ 26%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_draft_node_uses_streaming FAILED [ 33%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_critique_node_uses_streaming FAILED [ 40%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_finalize_node_uses_streaming FAILED [ 46%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_should_log_error_first_time PASSED [ 53%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_should_not_log_error_within_cooldown PASSED [ 60%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_should_log_error_after_cooldown PASSED [ 66%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_different_error_keys_logged_independently PASSED [ 73%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestSocketDisconnectionHandling::test_socket_disconnect_during_streaming_handled_gracefully PASSED [ 80%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestSocketDisconnectionHandling::test_socket_disconnect_error_is_logged_with_rate_limit PASSED [ 86%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestEmitThoughtNodeNameInAgent::test_plan_node_emits_thought_with_node_name FAILED [ 93%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestEmitThoughtNodeNameInAgent::test_draft_node_emits_thought_with_node_name FAILED [100%]
+
+================================== FAILURES ===================================
+_ TestStreamingGeneration.test_generate_with_streaming_emits_reasoning_content _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E870D8A90>
+prompt = 'Test prompt', workflow_id = 'test-wf-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestStreamingGeneration object at 0x0000024E87107810>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536296129936'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536296074704'>, <MagicMock name='ProviderFactory.get_provider()' id='2536296083344'>)
+
+    @pytest.mark.asyncio
+    async def test_generate_with_streaming_emits_reasoning_content(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+    ):
+        """Test that _generate_with_streaming emits reasoning_content."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        # Setup streaming callback to capture chunks
+        async def mock_stream_with_callback(request, callback):
+            # Simulate streaming reasoning chunks
+            chunks = [
+                StreamChunk(content="", reasoning_content="Thinking step 1..."),
+                StreamChunk(content="", reasoning_content="Analyzing..."),
+                StreamChunk(content="Final output", reasoning_content=None),
+            ]
+            for chunk in chunks:
+                await callback(chunk)
+            return GenerationResult(content="Final output", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        agent = CopywritingAgent()
+>       result = await agent._generate_with_streaming(
+            prompt="Test prompt",
+            workflow_id="test-wf-123",
+            node_name="plan"
+        )
+
+tests\application\agents\test_copywriting_agent_streaming.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E870D8A90>
+prompt = 'Test prompt', workflow_id = 'test-wf-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+___ TestStreamingGeneration.test_generate_with_streaming_fallback_on_error ____
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E87215CD0>
+prompt = 'Test prompt', workflow_id = 'test-wf-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestStreamingGeneration object at 0x0000024E87104950>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536279439568'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536279188688'>, <MagicMock name='ProviderFactory.get_provider()' id='2536279179984'>)
+
+    @pytest.mark.asyncio
+    async def test_generate_with_streaming_fallback_on_error(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+    ):
+        """Test that streaming falls back to non-streaming on error."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        # Make streaming fail
+        mock_generator.generate_stream_with_callback = AsyncMock(
+            side_effect=Exception("Streaming not supported")
+        )
+    
+        # But regular generate should work
+        mock_response = MagicMock()
+        mock_response.content = "Fallback content"
+        mock_generator.generate = AsyncMock(return_value=mock_response)
+    
+        agent = CopywritingAgent()
+>       result = await agent._generate_with_streaming(
+            prompt="Test prompt",
+            workflow_id="test-wf-123",
+            node_name="plan"
+        )
+
+tests\application\agents\test_copywriting_agent_streaming.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E87215CD0>
+prompt = 'Test prompt', workflow_id = 'test-wf-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+_ TestStreamingGeneration.test_stream_callback_handles_emit_error_gracefully __
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E87252450>
+prompt = 'Test prompt', workflow_id = 'test-wf-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestStreamingGeneration object at 0x0000024E871051D0>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536296403216'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536298171280'>, <MagicMock name='ProviderFactory.get_provider()' id='2536298171216'>)
+
+    @pytest.mark.asyncio
+    async def test_stream_callback_handles_emit_error_gracefully(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+    ):
+        """Test that stream callback handles emit errors without crashing."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        # Make emit_thought fail
+        mock_socket_manager.emit_thought = AsyncMock(
+            side_effect=Exception("Socket error")
+        )
+    
+        async def mock_stream_with_callback(request, callback):
+            chunks = [
+                StreamChunk(content="", reasoning_content="Thinking..."),
+                StreamChunk(content="Output", reasoning_content=None),
+            ]
+            for chunk in chunks:
+                await callback(chunk)
+            return GenerationResult(content="Output", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        agent = CopywritingAgent()
+    
+        # Should not raise, despite emit_thought failures
+>       result = await agent._generate_with_streaming(
+            prompt="Test prompt",
+            workflow_id="test-wf-123",
+            node_name="plan"
+        )
+
+tests\application\agents\test_copywriting_agent_streaming.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E87252450>
+prompt = 'Test prompt', workflow_id = 'test-wf-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+_________ TestNodeStreamingIntegration.test_plan_node_uses_streaming __________
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E871E2650>
+prompt = '你是一位专业的营销文案策划师。请为以下产品创建一份营销文案大纲。\n\n产品名称: Smart Watch Pro\n\n产品特点:\n- Heart rate monitoring\n- GPS tracking\n- 7-day ...sional and modern tone\n\n请创建一份包含以下内容的营销大纲:\n1. 目标受众分析\n2. 核心卖点提炼 (3-5个)\n3. 情感诉求点\n4. 推荐的文案结构\n5. 关键词和标语建议\n\n请用中文输出。'
+workflow_id = 'test-workflow-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestNodeStreamingIntegration object at 0x0000024E87105750>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536279161168'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536298386192'>, <MagicMock name='ProviderFactory.get_provider()' id='2536298393040'>)
+sample_state = {'brand_guidelines': 'Professional and modern tone', 'critique': None, 'current_stage': None, 'draft': None, ...}
+
+    @pytest.mark.asyncio
+    async def test_plan_node_uses_streaming(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+        sample_state,
+    ):
+        """Test that plan_node uses streaming generation."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        async def mock_stream_with_callback(request, callback):
+            # Simulate reasoning content
+            await callback(StreamChunk(content="", reasoning_content="Planning..."))
+            return GenerationResult(content="Marketing plan", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        agent = CopywritingAgent()
+>       result = await agent.plan_node(sample_state)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\application\agents\test_copywriting_agent_streaming.py:188: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:356: in plan_node
+    plan = await self._generate_with_streaming(prompt, workflow_id, "plan")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E871E2650>
+prompt = '你是一位专业的营销文案策划师。请为以下产品创建一份营销文案大纲。\n\n产品名称: Smart Watch Pro\n\n产品特点:\n- Heart rate monitoring\n- GPS tracking\n- 7-day ...sional and modern tone\n\n请创建一份包含以下内容的营销大纲:\n1. 目标受众分析\n2. 核心卖点提炼 (3-5个)\n3. 情感诉求点\n4. 推荐的文案结构\n5. 关键词和标语建议\n\n请用中文输出。'
+workflow_id = 'test-workflow-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+_________ TestNodeStreamingIntegration.test_draft_node_uses_streaming _________
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E871F9890>
+prompt = '你是一位专业的营销文案撰写师。请根据以下营销大纲为产品撰写完整的营销文案。\n\n产品名称: Smart Watch Pro\n\n营销大纲:\nSome plan\n\n要求:\n1. 文案应该吸引人、专业且有说服力\n2. 包含引人注目的标题\n3. 清晰展示产品价值\n4. 包含行动号召 (Call to Action)\n5. 长度在300-500字左右\n\n请用中文输出完整的营销文案。'
+workflow_id = 'test-workflow-123', node_name = 'draft'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestNodeStreamingIntegration object at 0x0000024E87106210>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536299234256'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536297663952'>, <MagicMock name='ProviderFactory.get_provider()' id='2536297674320'>)
+sample_state = {'brand_guidelines': 'Professional and modern tone', 'critique': None, 'current_stage': None, 'draft': None, ...}
+
+    @pytest.mark.asyncio
+    async def test_draft_node_uses_streaming(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+        sample_state,
+    ):
+        """Test that draft_node uses streaming generation."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        async def mock_stream_with_callback(request, callback):
+            await callback(StreamChunk(content="", reasoning_content="Drafting..."))
+            return GenerationResult(content="Draft content", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        sample_state["plan"] = "Some plan"
+    
+        agent = CopywritingAgent()
+>       result = await agent.draft_node(sample_state)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\application\agents\test_copywriting_agent_streaming.py:215: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:411: in draft_node
+    draft = await self._generate_with_streaming(prompt, workflow_id, "draft")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E871F9890>
+prompt = '你是一位专业的营销文案撰写师。请根据以下营销大纲为产品撰写完整的营销文案。\n\n产品名称: Smart Watch Pro\n\n营销大纲:\nSome plan\n\n要求:\n1. 文案应该吸引人、专业且有说服力\n2. 包含引人注目的标题\n3. 清晰展示产品价值\n4. 包含行动号召 (Call to Action)\n5. 长度在300-500字左右\n\n请用中文输出完整的营销文案。'
+workflow_id = 'test-workflow-123', node_name = 'draft'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+_______ TestNodeStreamingIntegration.test_critique_node_uses_streaming ________
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E87213E90>
+prompt = '你是一位资深的文案审核编辑。请对以下营销文案进行专业审核，并提出具体的改进建议。\n\n待审核文案:\nSome draft\n\n请从以下方面进行审核:\n1. **语言表达**: 是否流畅、专业、有感染力？\n2. **营销效果*...晰传达？\n4. **行动号召**: CTA是否有效？\n5. **结构布局**: 文案结构是否合理？\n\n请提供:\n- 3-5条具体的改进建议\n- 每条建议说明原因和修改方向\n- 优先级标注（高/中/低）\n\n请用中文输出。'
+workflow_id = 'test-workflow-123', node_name = 'critique'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestNodeStreamingIntegration object at 0x0000024E87106F90>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536296439312'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536298958608'>, <MagicMock name='ProviderFactory.get_provider()' id='2536279186512'>)
+sample_state = {'brand_guidelines': 'Professional and modern tone', 'critique': None, 'current_stage': None, 'draft': 'Some draft', ...}
+
+    @pytest.mark.asyncio
+    async def test_critique_node_uses_streaming(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+        sample_state,
+    ):
+        """Test that critique_node uses streaming generation."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        async def mock_stream_with_callback(request, callback):
+            await callback(StreamChunk(content="", reasoning_content="Critiquing..."))
+            return GenerationResult(content="Critique content", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        sample_state["draft"] = "Some draft"
+    
+        agent = CopywritingAgent()
+>       result = await agent.critique_node(sample_state)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\application\agents\test_copywriting_agent_streaming.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:461: in critique_node
+    critique = await self._generate_with_streaming(prompt, workflow_id, "critique")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E87213E90>
+prompt = '你是一位资深的文案审核编辑。请对以下营销文案进行专业审核，并提出具体的改进建议。\n\n待审核文案:\nSome draft\n\n请从以下方面进行审核:\n1. **语言表达**: 是否流畅、专业、有感染力？\n2. **营销效果*...晰传达？\n4. **行动号召**: CTA是否有效？\n5. **结构布局**: 文案结构是否合理？\n\n请提供:\n- 3-5条具体的改进建议\n- 每条建议说明原因和修改方向\n- 优先级标注（高/中/低）\n\n请用中文输出。'
+workflow_id = 'test-workflow-123', node_name = 'critique'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+_______ TestNodeStreamingIntegration.test_finalize_node_uses_streaming ________
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E873BBE90>
+prompt = '你是一位专业的文案润色专家。请根据初稿和审核建议，生成一份完美的最终营销文案。\n\n初稿:\nSome draft\n\n审核建议:\nSome critique\n\n要求:\n1. 综合所有改进建议优化文案\n2. 保持品牌调性一致\n3. 确保语言精炼有力\n4. 最终文案应该可以直接用于发布\n5. 长度控制在300-500字\n\n请直接输出最终版营销文案，无需额外说明。'
+workflow_id = 'test-workflow-123', node_name = 'finalize'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestNodeStreamingIntegration object at 0x0000024E87105550>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536299676752'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536298250768'>, <MagicMock name='ProviderFactory.get_provider()' id='2536298250576'>)
+sample_state = {'brand_guidelines': 'Professional and modern tone', 'critique': 'Some critique', 'current_stage': None, 'draft': 'Some draft', ...}
+
+    @pytest.mark.asyncio
+    async def test_finalize_node_uses_streaming(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+        sample_state,
+    ):
+        """Test that finalize_node uses streaming generation."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        async def mock_stream_with_callback(request, callback):
+            await callback(StreamChunk(content="", reasoning_content="Finalizing..."))
+            return GenerationResult(content="Final copy", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        sample_state["draft"] = "Some draft"
+        sample_state["critique"] = "Some critique"
+    
+        agent = CopywritingAgent()
+>       result = await agent.finalize_node(sample_state)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\application\agents\test_copywriting_agent_streaming.py:262: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:515: in finalize_node
+    final_copy = await self._generate_with_streaming(prompt, workflow_id, "finalize")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E873BBE90>
+prompt = '你是一位专业的文案润色专家。请根据初稿和审核建议，生成一份完美的最终营销文案。\n\n初稿:\nSome draft\n\n审核建议:\nSome critique\n\n要求:\n1. 综合所有改进建议优化文案\n2. 保持品牌调性一致\n3. 确保语言精炼有力\n4. 最终文案应该可以直接用于发布\n5. 长度控制在300-500字\n\n请直接输出最终版营销文案，无需额外说明。'
+workflow_id = 'test-workflow-123', node_name = 'finalize'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+_ TestEmitThoughtNodeNameInAgent.test_plan_node_emits_thought_with_node_name __
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E8731C410>
+prompt = '你是一位专业的营销文案策划师。请为以下产品创建一份营销文案大纲。\n\n产品名称: Smart Watch Pro\n\n产品特点:\n- Heart rate monitoring\n- GPS tracking\n- 7-day ...sional and modern tone\n\n请创建一份包含以下内容的营销大纲:\n1. 目标受众分析\n2. 核心卖点提炼 (3-5个)\n3. 情感诉求点\n4. 推荐的文案结构\n5. 关键词和标语建议\n\n请用中文输出。'
+workflow_id = 'test-workflow-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestEmitThoughtNodeNameInAgent object at 0x0000024E870F4110>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536298131536'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536299179856'>, <MagicMock name='ProviderFactory.get_provider()' id='2536299179728'>)
+sample_state = {'brand_guidelines': 'Professional and modern tone', 'critique': None, 'current_stage': None, 'draft': None, ...}
+
+    @pytest.mark.asyncio
+    async def test_plan_node_emits_thought_with_node_name(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+        sample_state,
+    ):
+        """Test that plan_node passes node_name='plan' to emit_thought."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        async def mock_stream_with_callback(request, callback):
+            return GenerationResult(content="Plan", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        agent = CopywritingAgent()
+>       await agent.plan_node(sample_state)
+
+tests\application\agents\test_copywriting_agent_streaming.py:434: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:356: in plan_node
+    plan = await self._generate_with_streaming(prompt, workflow_id, "plan")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E8731C410>
+prompt = '你是一位专业的营销文案策划师。请为以下产品创建一份营销文案大纲。\n\n产品名称: Smart Watch Pro\n\n产品特点:\n- Heart rate monitoring\n- GPS tracking\n- 7-day ...sional and modern tone\n\n请创建一份包含以下内容的营销大纲:\n1. 目标受众分析\n2. 核心卖点提炼 (3-5个)\n3. 情感诉求点\n4. 推荐的文案结构\n5. 关键词和标语建议\n\n请用中文输出。'
+workflow_id = 'test-workflow-123', node_name = 'plan'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+_ TestEmitThoughtNodeNameInAgent.test_draft_node_emits_thought_with_node_name _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E872CEF90>
+prompt = '你是一位专业的营销文案撰写师。请根据以下营销大纲为产品撰写完整的营销文案。\n\n产品名称: Smart Watch Pro\n\n营销大纲:\nSome plan\n\n要求:\n1. 文案应该吸引人、专业且有说服力\n2. 包含引人注目的标题\n3. 清晰展示产品价值\n4. 包含行动号召 (Call to Action)\n5. 长度在300-500字左右\n\n请用中文输出完整的营销文案。'
+workflow_id = 'test-workflow-123', node_name = 'draft'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:278: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_copywriting_agent_streaming.TestEmitThoughtNodeNameInAgent object at 0x0000024E870F4AD0>
+mock_socket_manager = <MagicMock name='socket_manager' id='2536297928976'>
+mock_provider_factory_streaming = (<MagicMock name='ProviderFactory' id='2536298637264'>, <MagicMock name='ProviderFactory.get_provider()' id='2536298890512'>)
+sample_state = {'brand_guidelines': 'Professional and modern tone', 'critique': None, 'current_stage': None, 'draft': None, ...}
+
+    @pytest.mark.asyncio
+    async def test_draft_node_emits_thought_with_node_name(
+        self,
+        mock_socket_manager,
+        mock_provider_factory_streaming,
+        sample_state,
+    ):
+        """Test that draft_node passes node_name='draft' to emit_thought."""
+        mock_factory, mock_generator = mock_provider_factory_streaming
+    
+        async def mock_stream_with_callback(request, callback):
+            return GenerationResult(content="Draft", raw_response={})
+    
+        mock_generator.generate_stream_with_callback = mock_stream_with_callback
+    
+        sample_state["plan"] = "Some plan"
+    
+        agent = CopywritingAgent()
+>       await agent.draft_node(sample_state)
+
+tests\application\agents\test_copywriting_agent_streaming.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:411: in draft_node
+    draft = await self._generate_with_streaming(prompt, workflow_id, "draft")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x0000024E872CEF90>
+prompt = '你是一位专业的营销文案撰写师。请根据以下营销大纲为产品撰写完整的营销文案。\n\n产品名称: Smart Watch Pro\n\n营销大纲:\nSome plan\n\n要求:\n1. 文案应该吸引人、专业且有说服力\n2. 包含引人注目的标题\n3. 清晰展示产品价值\n4. 包含行动号召 (Call to Action)\n5. 长度在300-500字左右\n\n请用中文输出完整的营销文案。'
+workflow_id = 'test-workflow-123', node_name = 'draft'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}_{node_name}"
+                if await CopywritingAgent._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+                response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+    
+                # Emit completion event
+                await socket_manager.emit_tool_call(
+                    workflow_id=workflow_id,
+                    tool_name="deepseek_generate",
+                    status="completed",
+                    message=f"DeepSeek API call completed for {node_name}"
+                )
+    
+                return response.content
+        except Exception as e:
+            # Emit error event
+>           await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="error",
+                message=f"DeepSeek API call failed: {str(e)}"
+            )
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:308: TypeError
+============================== warnings summary ===============================
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_emits_reasoning_content
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_emits_reasoning_content
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_fallback_on_error
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_stream_callback_handles_emit_error_gracefully
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_plan_node_uses_streaming
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_draft_node_uses_streaming
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_critique_node_uses_streaming
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_finalize_node_uses_streaming
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestEmitThoughtNodeNameInAgent::test_plan_node_emits_thought_with_node_name
+FAILED tests/application/agents/test_copywriting_agent_streaming.py::TestEmitThoughtNodeNameInAgent::test_draft_node_emits_thought_with_node_name
+=================== 9 failed, 6 passed, 1 warning in 1.50s ====================

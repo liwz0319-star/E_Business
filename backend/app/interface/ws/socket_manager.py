@@ -121,6 +121,7 @@ class SocketManager:
         self,
         workflow_id: str,
         content: str,
+        node_name: Optional[str] = None,
         sid: Optional[str] = None
     ) -> None:
         """
@@ -129,18 +130,24 @@ class SocketManager:
         Args:
             workflow_id: Workflow/conversation ID
             content: Thought content
+            node_name: Optional node name (plan, draft, critique, finalize)
             sid: Optional specific socket ID (broadcasts if None)
         """
+        # Build data payload - conditionally include node_name
+        data = {"content": content}
+        if node_name:
+            data["node_name"] = node_name
+        
         payload = {
             "type": "thought",
             "workflowId": workflow_id,
-            "data": {"content": content},
+            "data": data,
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         }
         
         try:
             await self.sio.emit("agent:thought", payload, room=sid)
-            logger.debug(f"Emitted agent:thought: workflow_id={workflow_id}")
+            logger.debug(f"Emitted agent:thought: workflow_id={workflow_id}, node={node_name}")
         except Exception as e:
             logger.error(f"Failed to emit agent:thought: {e}")
     

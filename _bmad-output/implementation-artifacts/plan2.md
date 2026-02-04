@@ -1,395 +1,383 @@
-# Project Handover Report: Story 1.3 Socket.io Server
+# 代码审查报告 - 故事 2-2 (Copywriting Agent Workflow)
 
-**Date**: 2026-01-21
-**Status**: 🔴 **CRITICAL REGRESSION** (Files Missing)
-
-## 🚨 Critical Situation
-The following implementation files are **MISSING** from the disk (likely deleted as they were untracked):
-- `backend/app/interface/ws/socket_manager.py`
-- `backend/app/interface/ws/schemas.py`
-
-## 🛠 Progress Snapshot
-Before deletion, the following fixes were applied:
-1. **Fixed Path Double Config**: Removed `socketio_path="/ws"` from manager to avoid `/ws/ws/` issue.
-2. **Schema Aliases**: Added `alias="workflowId"` to Pydantic models.
-3. **Settings**: Updated CORS to use `settings.cors_origins_list` instead of `os.getenv`.
-4. **Resilience**: Added error handling to all `emit_*` methods.
-5. **Modernization**: Replaced deprecated `datetime.utcnow`.
-
-## 👉 Instructions for Next Agent
-
-1. **RESTORE FILES**: recreate the files using the content provided below.
-2. **GIT ADD**: Immediately run `git add backend/app/interface/ws/` to track them.
-3. **RESUME FIXES**:
-   - Issue **HIGH-4**: `tests/test_socketio_integration.py` uses mocks. Rewrite to use real `python-socketio` client.
-   - Issue **MEDIUM-3**: Add rate limiting.
+**审查日期:** 2026-01-24
+**审查者:** Code Review Agent (AI)
+**故事文件:** 2-2-copywriting-agent-workflow.md
+**故事状态:** review
 
 ---
 
-## 💾 Restoration Content
+## 审查摘要
 
-### 1. `backend/app/interface/ws/schemas.py`
+| 类别 | 数量 |
+|------|------|
+| 🔴 严重问题 | 3 |
+| 🟡 中等问题 | 4 |
+| 🟢 轻微问题 | 2 |
+| **总计** | **9** |
 
-```python
-"""
-Socket.IO Event Payload Schemas
+---
 
-Defines Pydantic models for real-time event payloads.
-"""
+## Git vs Story 文件列表差异
 
-from datetime import datetime, timezone
-from typing import Any, Dict, Literal
+| 文件 | Story 声明 | Git 实际 | 状态 |
+|------|-----------|---------|------|
+| `test_copywriting_agent.py` | `tests/test_copywriting_agent.py` | `tests/application/agents/test_copywriting_agent.py` | 🟡 路径不符 |
+| `copywriting.py` (routes) | `api/v1/copywriting.py` | `routes/copywriting.py` | 🟡 路径描述不符 |
+| Prompts 模块 | 未声明 | `agents/prompts/` 新增 | 🟢 未记录 |
 
-from pydantic import BaseModel, ConfigDict, Field
+---
 
+## 🔴 严重问题
 
-class BaseEventPayload(BaseModel):
-    """Base class for all Socket.IO event payloads."""
-    
-    model_config = ConfigDict(populate_by_name=True)
-    
-    workflow_id: str = Field(..., alias="workflowId", description="Unique ID of the workflow/conversation")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Event timestamp in ISO8601 format")
+### CR-1: 测试文件路径与 Story File List 不符
 
+**位置:** `backend/tests/test_copywriting_agent.py` (故事声称)
+**实际情况:** 测试文件在 `backend/tests/application/agents/test_copywriting_agent.py`
+**严重性:** HIGH
+**相关 AC:** AC 1-5 (Testing)
 
-class AgentThoughtEvent(BaseEventPayload):
-    """
-    Event for intermediate reasoning steps from the LLM.
-    
-    Emitted on: agent:thought
-    """
-    
-    type: Literal["thought"] = "thought"
-    data: Dict[str, Any] = Field(..., description="Thought content")
-    
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "type": "thought",
-                "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
-                "data": {"content": "Analyzing the user request..."},
-                "timestamp": "2026-01-21T12:00:00Z"
-            }
-        }
-    }
+**描述:**
+故事 File List 声称测试文件位于 `tests/test_copywriting_agent.py`，但实际文件位于 `tests/application/agents/test_copywriting_agent.py`。这导致文档不准确，可能误导后续开发者。
 
-
-class AgentToolCallEvent(BaseEventPayload):
-    """
-    Event when agent invokes a tool.
-    
-    Emitted on: agent:tool_call
-    """
-    
-    type: Literal["tool_call"] = "tool_call"
-    data: Dict[str, Any] = Field(..., description="Tool call details")
-    
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "type": "tool_call",
-                "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
-                "data": {
-                    "tool_name": "generate_image",
-                    "status": "in_progress",
-                    "message": "Generating image..."
-                },
-                "timestamp": "2026-01-21T12:00:01Z"
-            }
-        }
-    }
-
-
-class AgentResultEvent(BaseEventPayload):
-    """
-    Event for final output from agent.
-    
-    Emitted on: agent:result
-    """
-    
-    type: Literal["result"] = "result"
-    data: Dict[str, Any] = Field(..., description="Final result payload")
-    
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "type": "result",
-                "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
-                "data": {
-                    "status": "success",
-                    "content_type": "text",
-                    "content": "Here is your generated content..."
-                },
-                "timestamp": "2026-01-21T12:00:05Z"
-            }
-        }
-    }
-
-
-class AgentErrorEvent(BaseEventPayload):
-    """
-    Event for errors during agent execution.
-    
-    Emitted on: agent:error
-    """
-    
-    type: Literal["error"] = "error"
-    data: Dict[str, Any] = Field(..., description="Error details")
-    
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "type": "error",
-                "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
-                "data": {
-                    "code": "GENERATION_FAILED",
-                    "message": "Failed to generate content",
-                    "details": {}
-                },
-                "timestamp": "2026-01-21T12:00:05Z"
-            }
-        }
-    }
+**证据:**
+```bash
+# 实际文件路径:
+F:\AAA Work\AIproject\E_Business\backend\tests\application\agents\test_copywriting_agent.py
 ```
 
-### 2. `backend/app/interface/ws/socket_manager.py`
+**建议修复:**
+- 更新故事 File List 为正确路径
+- 或将测试文件移动到声明位置
 
+---
+
+### CR-2: DTO `__init__.py` 未导出所有响应类
+
+**位置:** `backend/app/application/dtos/__init__.py:7`
+**严重性:** HIGH
+**相关 AC:** AC 4 (API Endpoint)
+
+**描述:**
+DTO 模块的 `__init__.py` 仅导出 `CopywritingRequest` 和 `CopywritingResponse`，但 API 路由文件 `copywriting.py` 导入了 `WorkflowStatusResponse` 和 `WorkflowCancelResponse`。虽然当前代码可以工作（直接从 `copywriting.py` 导入），但这违反了模块导出约定，可能导致类型提示问题。
+
+**问题代码:**
 ```python
-"""
-Socket.IO Manager
+# backend/app/application/dtos/__init__.py (line 7-9)
+__all__ = ["CopywritingRequest", "CopywritingResponse"]  # 缺少其他响应类
 
-Provides Socket.IO server with JWT authentication for real-time agent events.
-"""
-
-import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
-
-import socketio
-
-from app.core.config import settings
-from app.core.security import decode_access_token
-
-logger = logging.getLogger(__name__)
-
-
-class SocketManager:
-    """
-    Socket.IO Manager for handling WebSocket connections with JWT authentication.
-    
-    Provides methods for:
-    - Authenticated connection handling
-    - Event emission (agent:thought, agent:tool_call, agent:result, agent:error)
-    """
-    
-    def __init__(self):
-        # Get CORS origins from settings (filter empty strings)
-        cors_origins = [
-            origin for origin in settings.cors_origins_list 
-            if origin  # Filter empty strings
-        ]
-        
-        # Create async Socket.IO server
-        self.sio = socketio.AsyncServer(
-            async_mode="asgi",
-            cors_allowed_origins=cors_origins,
-            cors_credentials=True,
-            logger=False,
-            engineio_logger=False,
-        )
-        
-        # Create ASGI app for mounting
-        # Note: socketio_path is NOT set here because main.py mounts at /ws
-        self.app = socketio.ASGIApp(self.sio)
-        
-        # Store connected users: {sid: user_id}
-        self._connected_users: Dict[str, str] = {}
-        
-        # Register event handlers
-        self._register_handlers()
-    
-    def _register_handlers(self) -> None:
-        """Register Socket.IO event handlers."""
-        
-        @self.sio.event
-        async def connect(sid: str, environ: dict, auth: Optional[dict] = None) -> bool:
-            """
-            Handle client connection with JWT authentication.
-            
-            Args:
-                sid: Socket ID
-                environ: WSGI environ dict
-                auth: Authentication data from client handshake
-                
-            Returns:
-                True if connection accepted, False to reject
-            """
-            logger.info(f"Connection attempt from sid={sid}")
-            
-            # Check for auth token
-            if not auth or "token" not in auth:
-                logger.warning(f"Connection rejected: No token provided (sid={sid})")
-                raise socketio.exceptions.ConnectionRefusedError("Authentication required")
-            
-            token = auth.get("token", "")
-            
-            # Validate JWT token
-            payload = decode_access_token(token)
-            if payload is None:
-                logger.warning(f"Connection rejected: Invalid token (sid={sid})")
-                raise socketio.exceptions.ConnectionRefusedError("Invalid or expired token")
-            
-            # Extract user ID from token
-            user_id = payload.get("sub")
-            if not user_id:
-                logger.warning(f"Connection rejected: No user ID in token (sid={sid})")
-                raise socketio.exceptions.ConnectionRefusedError("Invalid token payload")
-            
-            # Store user mapping
-            self._connected_users[sid] = user_id
-            
-            logger.info(f"Connection accepted: sid={sid}, user_id={user_id}")
-            return True
-        
-        @self.sio.event
-        async def disconnect(sid: str) -> None:
-            """Handle client disconnection."""
-            user_id = self._connected_users.pop(sid, None)
-            logger.info(f"Client disconnected: sid={sid}, user_id={user_id}")
-    
-    async def emit_thought(
-        self,
-        workflow_id: str,
-        content: str,
-        sid: Optional[str] = None
-    ) -> None:
-        """
-        Emit agent:thought event.
-        
-        Args:
-            workflow_id: Workflow/conversation ID
-            content: Thought content
-            sid: Optional specific socket ID (broadcasts if None)
-        """
-        payload = {
-            "type": "thought",
-            "workflowId": workflow_id,
-            "data": {"content": content},
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        }
-        
-        try:
-            await self.sio.emit("agent:thought", payload, room=sid)
-            logger.debug(f"Emitted agent:thought: workflow_id={workflow_id}")
-        except Exception as e:
-            logger.error(f"Failed to emit agent:thought: {e}")
-    
-    async def emit_tool_call(
-        self,
-        workflow_id: str,
-        tool_name: str,
-        status: str,
-        message: str,
-        sid: Optional[str] = None
-    ) -> None:
-        """
-        Emit agent:tool_call event.
-        
-        Args:
-            workflow_id: Workflow/conversation ID
-            tool_name: Name of the tool being called
-            status: Status (e.g., "in_progress", "completed")
-            message: Status message
-            sid: Optional specific socket ID
-        """
-        payload = {
-            "type": "tool_call",
-            "workflowId": workflow_id,
-            "data": {
-                "tool_name": tool_name,
-                "status": status,
-                "message": message
-            },
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        }
-        
-        try:
-            await self.sio.emit("agent:tool_call", payload, room=sid)
-            logger.debug(f"Emitted agent:tool_call: workflow_id={workflow_id}, tool={tool_name}")
-        except Exception as e:
-            logger.error(f"Failed to emit agent:tool_call: {e}")
-    
-    async def emit_result(
-        self,
-        workflow_id: str,
-        result_data: Dict[str, Any],
-        sid: Optional[str] = None
-    ) -> None:
-        """
-        Emit agent:result event.
-        
-        Args:
-            workflow_id: Workflow/conversation ID
-            result_data: Final result payload
-            sid: Optional specific socket ID
-        """
-        payload = {
-            "type": "result",
-            "workflowId": workflow_id,
-            "data": result_data,
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        }
-        
-        try:
-            await self.sio.emit("agent:result", payload, room=sid)
-            logger.info(f"Emitted agent:result: workflow_id={workflow_id}")
-        except Exception as e:
-            logger.error(f"Failed to emit agent:result: {e}")
-    
-    async def emit_error(
-        self,
-        workflow_id: str,
-        error_code: str,
-        error_message: str,
-        details: Optional[Dict[str, Any]] = None,
-        sid: Optional[str] = None
-    ) -> None:
-        """
-        Emit agent:error event.
-        
-        Args:
-            workflow_id: Workflow/conversation ID
-            error_code: Error code
-            error_message: Error message
-            details: Optional additional error details
-            sid: Optional specific socket ID
-        """
-        payload = {
-            "type": "error",
-            "workflowId": workflow_id,
-            "data": {
-                "code": error_code,
-                "message": error_message,
-                "details": details or {}
-            },
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        }
-        
-        try:
-            await self.sio.emit("agent:error", payload, room=sid)
-            logger.warning(f"Emitted agent:error: workflow_id={workflow_id}, code={error_code}")
-        except Exception as e:
-            logger.error(f"Failed to emit agent:error: {e}")
-    
-    def get_user_id(self, sid: str) -> Optional[str]:
-        """Get user ID for a socket ID."""
-        return self._connected_users.get(sid)
-    
-    def get_connected_count(self) -> int:
-        """Get number of connected clients."""
-        return len(self._connected_users)
-
-
-# Singleton instance
-socket_manager = SocketManager()
+# backend/app/interface/routes/copywriting.py (line 12-16)
+from app.application.dtos.copywriting import (
+    CopywritingRequest,
+    CopywritingResponse,
+    WorkflowStatusResponse,     # ❌ 未在 __init__.py 中导出
+    WorkflowCancelResponse,     # ❌ 未在 __init__.py 中导出
+)
 ```
+
+**建议修复:**
+```python
+# 修改 backend/app/application/dtos/__init__.py
+__all__ = [
+    "CopywritingRequest",
+    "CopywritingResponse",
+    "WorkflowStatusResponse",   # 添加
+    "WorkflowCancelResponse",   # 添加
+]
+```
+
+---
+
+### CR-3: 测试未覆盖关键验收标准 AC5 (Socket.io 事件流)
+
+**位置:** `backend/tests/application/agents/test_copywriting_agent.py`
+**严重性:** HIGH
+**相关 AC:** AC 5 - "intermediate thoughts are streamed via Socket.io"
+
+**描述:**
+AC5 要求通过 Socket.io 流式传输中间思考过程，但现有测试未充分验证：
+
+1. **未验证 `node_name` 参数**: `emit_thought` 应包含 `node_name` (plan/draft/critique/finalize)
+2. **未验证 `emit_tool_call` 事件**: Agent 代码 (line 234-260) 发出了工具调用事件，但测试未验证
+3. **未测试流式回调**: `_generate_with_streaming` 使用 `stream_callback`，但测试使用 `generate()` 而非 `generate_stream_with_callback()`
+
+**当前测试覆盖:**
+```python
+# backend/tests/application/agents/test_copywriting_agent.py:115-117
+# 只验证了 workflow_id 和 content，未验证 node_name
+assert "Smart Watch Pro" in first_call.kwargs["content"]
+assert first_call.kwargs["workflow_id"] == "test-workflow-123"
+# ❌ 缺少: assert first_call.kwargs["node_name"] == "plan"
+```
+
+**缺失测试:**
+- `emit_tool_call` 的 `status` 参数验证 (in_progress/completed/error)
+- 流式内容回调的 `reasoning_content` 验证
+- 错误情况下的 Socket.io 事件验证
+
+**建议添加测试:**
+```python
+@pytest.mark.asyncio
+async def test_plan_node_emits_tool_call_events(
+    self, mock_socket_manager, mock_provider_factory, sample_state
+):
+    """验证 tool_call 事件正确发出"""
+    # ... setup ...
+    await agent.plan_node(sample_state)
+    # 验证 emit_tool_call 被调用，参数正确
+    mock_socket_manager.emit_tool_call.assert_any_call(
+        workflow_id="test-workflow-123",
+        tool_name="deepseek_generate",
+        status="in_progress",
+        message=...
+    )
+```
+
+---
+
+## 🟡 中等问题
+
+### MD-4: API 路径与 Story Dev Notes 不完全一致
+
+**位置:** `backend/app/interface/routes/copywriting.py:21` vs Story Dev Notes line 383
+**严重性:** MEDIUM
+
+**描述:**
+Story Dev Notes 声明路径为 `backend/app/interface/api/v1/copywriting.py`，但实际文件位于 `backend/app/interface/routes/copywriting.py`。
+
+**Story 声称 (line 183-185):**
+```
+├── interface/
+│   └── api/
+│       └── v1/
+│           └── copywriting.py      # [CREATE] REST endpoint
+```
+
+**实际情况:**
+```
+backend/app/interface/routes/copywriting.py
+```
+
+**影响:** 虽然功能正常（main.py 正确导入），但文档误导。
+
+---
+
+### MD-5: 测试验证了不存在的字段长度限制
+
+**位置:** `backend/tests/interface/routes/test_copywriting.py:149-175`
+**严重性:** MEDIUM
+
+**描述:**
+测试 `test_product_name_max_length` 和 `test_brand_guidelines_max_length` 验证字段长度限制（200/1000字符），但 DTO `CopywritingRequest` 中没有定义这些限制。
+
+**测试代码 (line 149-160):**
+```python
+async def test_product_name_max_length(self):
+    """Test product name max length validation."""
+    response = await client.post(
+        "/api/v1/copywriting/generate",
+        json={
+            "productName": "A" * 201,  # 期望 422 错误
+            "features": ["F1"]
+        }
+    )
+    assert response.status_code == 422  # ❌ 此测试会失败！
+```
+
+**DTO 定义 (backend/app/application/dtos/copywriting.py:15):**
+```python
+product_name: str = Field(..., description="Name of the product")
+# ❌ 没有 max_length 限制，测试将失败
+```
+
+**建议修复:**
+- 方案A: 在 DTO 添加长度限制
+- 方案B: 删除这两个测试
+
+---
+
+### MD-6: 错误处理未测试边界条件
+
+**位置:** `backend/tests/application/agents/test_copywriting_agent.py:324-347`
+**严重性:** MEDIUM
+
+**描述:**
+只测试了 `HTTPClientError`，但代码还有其他错误处理路径未测试：
+
+1. **空响应处理** (line 190, 262, 368, 418, 472)
+2. **Socket.io 连接失败** (line 225-231)
+3. **流式失败回退** (line 271-273)
+4. **工作流取消** (`cancel_workflow` 方法)
+
+**当前错误测试 (line 324-347):**
+```python
+# 只测试了 HTTPClientError
+async def test_plan_node_emits_error_on_failure(...):
+    mock_generator.generate = AsyncMock(
+        side_effect=HTTPClientError("API request failed")
+    )
+    # ✅ 测试了这个
+    # ❌ 未测试: Socket.io emit 失败
+    # ❌ 未测试: 流式失败后回退到非流式
+```
+
+**建议添加:**
+```python
+@pytest.mark.asyncio
+async def test_streaming_fallback_on_failure(...):
+    """测试流式失败后回退到常规生成"""
+    # Mock streaming 失败，常规成功
+    mock_generator.generate_stream_with_callback = AsyncMock(
+        side_effect=Exception("Streaming failed")
+    )
+    mock_generator.generate = AsyncMock(return_value=MagicMock(content="fallback"))
+
+    result = await agent.plan_node(sample_state)
+    assert result["plan"] == "fallback"
+```
+
+---
+
+### MD-7: Git 状态显示大量未跟踪的 `__pycache__` 文件
+
+**位置:** `.gitignore` 配置
+**严重性:** MEDIUM
+
+**描述:**
+Git status 显示大量 `__pycache__` 文件未跟踪，说明 `.gitignore` 可能未正确配置。
+
+**示例未跟踪文件:**
+```
+?? backend/app/__pycache__/main.cpython-311.pyc
+?? backend/app/domain/entities/__pycache__/...
+?? backend/tests/__pycache__/...
+```
+
+**建议修复:**
+确保 `.gitignore` 包含:
+```
+__pycache__/
+*.py[cod]
+*$py.class
+```
+
+---
+
+## 🟢 轻微问题
+
+### LW-8: Docstring 与 AC 描述语言不一致
+
+**位置:** `backend/app/application/agents/copywriting_agent.py:49-64`
+**严重性:** LOW
+
+**描述:**
+Agent 类的 docstring 使用英文，但 prompts 模块 (`copywriting_prompts.py`) 使用中文。代码风格不一致。
+
+**建议:**
+- 统一使用一种语言（推荐中文，因为 prompts 是中文）
+- 或明确标注多语言支持策略
+
+---
+
+### LW-9: CopywritingState `to_dict()` 方法未被使用
+
+**位置:** `backend/app/domain/entities/agent_state.py:103-115`
+**严重性:** LOW
+
+**描述:**
+LangGraph 工作流使用 `GraphState` (TypedDict) 而非 `CopywritingState` dataclass。Domain entity 中定义的 `to_dict()` 方法可能未使用。
+
+**当前状态:**
+```python
+# backend/app/domain/entities/agent_state.py
+@dataclass
+class CopywritingState:
+    # ... 定义了完整的 dataclass
+    def to_dict(self) -> dict:  # ❌ 可能未使用
+        ...
+
+# backend/app/application/agents/copywriting_agent.py
+class GraphState(TypedDict):  # ✅ 实际使用这个
+    product_name: str
+    features: List[str]
+    ...
+```
+
+**建议:**
+- 如果 `CopywritingState` 未被使用，考虑删除或重构
+- 或让 LangGraph 直接使用 `CopywritingState` dataclass
+
+---
+
+## 验收标准 (AC) 覆盖分析
+
+| AC | 描述 | 实现状态 | 测试状态 |
+|----|------|---------|---------|
+| AC1 | 产品名称和特性输入 | ✅ 已实现 | ✅ 已测试 |
+| AC2 | CopywritingAgent 工作流执行 | ✅ 已实现 | ✅ 已测试 |
+| AC3 | 状态转换 Plan->Draft->Critique->Finalize | ✅ 已实现 | ✅ 已测试 |
+| AC4 | 最终状态包含润色文案 | ✅ 已实现 | ✅ 已测试 |
+| AC5 | 中间思考通过 Socket.io 流式传输 | ⚠️ 部分实现 | ❌ 测试不足 |
+
+---
+
+## 推荐修复优先级
+
+### P0 (必须修复才能合并):
+- CR-2: DTO `__init__.py` 导出问题
+
+### P1 (强烈建议):
+- CR-3: Socket.io 事件测试覆盖
+- MD-5: 字段长度限制测试修复
+
+### P2 (应该修复):
+- CR-1: 文档路径修正
+- MD-4: API 路径文档修正
+- MD-6: 错误处理边界测试
+
+### P3 (可选):
+- MD-7: `.gitignore` 配置
+- LW-8: 语言一致性
+- LW-9: 未使用代码清理
+
+---
+
+## 修复行动项 (供其他 Agent 使用)
+
+```yaml
+action_items:
+  - id: AI-001
+    severity: HIGH
+    title: "修复 DTO __init__.py 导出缺失"
+    file: "backend/app/application/dtos/__init__.py"
+    description: "添加 WorkflowStatusResponse 和 WorkflowCancelResponse 到 __all__"
+
+  - id: AI-002
+    severity: HIGH
+    title: "添加 Socket.io 事件流测试"
+    file: "backend/tests/application/agents/test_copywriting_agent.py"
+    description: "验证 emit_thought 的 node_name 参数和 emit_tool_call 事件"
+
+  - id: AI-003
+    severity: MEDIUM
+    title: "修复字段长度限制测试"
+    file: "backend/tests/interface/routes/test_copywriting.py"
+    description: "在 DTO 添加 max_length 或删除相关测试"
+
+  - id: AI-004
+    severity: MEDIUM
+    title: "更新 Story File List 文档"
+    file: "_bmad-output/implementation-artifacts/2-2-copywriting-agent-workflow.md"
+    description: "修正测试文件路径声明"
+
+  - id: AI-005
+    severity: LOW
+    title: "配置 .gitignore"
+    file: ".gitignore"
+    description: "添加 __pycache__ 忽略规则"
+```
+
+---
+
+**审查完成时间:** 2026-01-24
+**下一步:** 将此报告移交给开发 Agent 进行修复

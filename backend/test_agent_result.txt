@@ -1,0 +1,43 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 18 items
+
+tests/application/agents/test_copywriting_agent.py::TestCopywritingAgentInit::test_default_initialization PASSED [  5%]
+tests/application/agents/test_copywriting_agent.py::TestCopywritingAgentInit::test_custom_initialization PASSED [ 11%]
+tests/application/agents/test_copywriting_agent.py::TestPlanNode::test_plan_node_success PASSED [ 16%]
+tests/application/agents/test_copywriting_agent.py::TestPlanNode::test_plan_node_emits_thought_on_start PASSED [ 22%]
+tests/application/agents/test_copywriting_agent.py::TestDraftNode::test_draft_node_success PASSED [ 27%]
+tests/application/agents/test_copywriting_agent.py::TestCritiqueNode::test_critique_node_success PASSED [ 33%]
+tests/application/agents/test_copywriting_agent.py::TestFinalizeNode::test_finalize_node_success PASSED [ 38%]
+tests/application/agents/test_copywriting_agent.py::TestFinalizeNode::test_finalize_node_emits_result PASSED [ 44%]
+tests/application/agents/test_copywriting_agent.py::TestFullWorkflow::test_run_full_workflow PASSED [ 50%]
+tests/application/agents/test_copywriting_agent.py::TestFullWorkflow::test_run_generates_workflow_id_if_not_provided PASSED [ 55%]
+tests/application/agents/test_copywriting_agent.py::TestAsyncRun::test_run_async_returns_workflow_id_immediately PASSED [ 61%]
+tests/application/agents/test_copywriting_agent.py::TestErrorHandling::test_plan_node_emits_error_on_failure PASSED [ 66%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_thought_includes_node_name PASSED [ 72%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_tool_call_events_for_plan_node PASSED [ 77%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_tool_call_error_on_streaming_failure PASSED [ 83%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_each_node_uses_correct_node_name PASSED [ 88%]
+tests/application/agents/test_copywriting_agent.py::TestStreamingFallback::test_streaming_fallback_on_failure PASSED [ 94%]
+tests/application/agents/test_copywriting_agent.py::TestStreamingFallback::test_streaming_success_uses_streaming_method PASSED [100%]
+
+============================== warnings summary ===============================
+tests/application/agents/test_copywriting_agent.py::TestPlanNode::test_plan_node_success
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 18 passed, 1 warning in 0.47s ========================

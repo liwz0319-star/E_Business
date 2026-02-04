@@ -1,0 +1,40 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 15 items
+
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_emits_reasoning_content PASSED [  6%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_fallback_on_error PASSED [ 13%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_stream_callback_handles_emit_error_gracefully PASSED [ 20%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_plan_node_uses_streaming PASSED [ 26%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_draft_node_uses_streaming PASSED [ 33%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_critique_node_uses_streaming PASSED [ 40%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestNodeStreamingIntegration::test_finalize_node_uses_streaming PASSED [ 46%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_should_log_error_first_time PASSED [ 53%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_should_not_log_error_within_cooldown PASSED [ 60%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_should_log_error_after_cooldown PASSED [ 66%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestRateLimitedErrorLogging::test_different_error_keys_logged_independently PASSED [ 73%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestSocketDisconnectionHandling::test_socket_disconnect_during_streaming_handled_gracefully PASSED [ 80%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestSocketDisconnectionHandling::test_socket_disconnect_error_is_logged_with_rate_limit PASSED [ 86%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestEmitThoughtNodeNameInAgent::test_plan_node_emits_thought_with_node_name PASSED [ 93%]
+tests/application/agents/test_copywriting_agent_streaming.py::TestEmitThoughtNodeNameInAgent::test_draft_node_emits_thought_with_node_name PASSED [100%]
+
+============================== warnings summary ===============================
+tests/application/agents/test_copywriting_agent_streaming.py::TestStreamingGeneration::test_generate_with_streaming_emits_reasoning_content
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 15 passed, 1 warning in 0.35s ========================

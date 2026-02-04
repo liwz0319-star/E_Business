@@ -1,0 +1,32 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 7 items
+
+tests/interface/test_socket_manager.py::TestEmitThoughtWithNodeName::test_emit_thought_with_node_name PASSED [ 14%]
+tests/interface/test_socket_manager.py::TestEmitThoughtWithNodeName::test_emit_thought_without_node_name PASSED [ 28%]
+tests/interface/test_socket_manager.py::TestEmitThoughtWithNodeName::test_emit_thought_with_all_node_names PASSED [ 42%]
+tests/interface/test_socket_manager.py::TestEmitThoughtWithNodeName::test_emit_thought_with_sid PASSED [ 57%]
+tests/interface/test_socket_manager.py::TestEmitThoughtWithNodeName::test_emit_thought_handles_emit_failure PASSED [ 71%]
+tests/interface/test_socket_manager.py::TestEmitThoughtPayloadStructure::test_payload_structure_matches_api_contract PASSED [ 85%]
+tests/interface/test_socket_manager.py::TestEmitThoughtPayloadStructure::test_workflow_id_is_camel_case_in_payload PASSED [100%]
+
+============================== warnings summary ===============================
+tests/interface/test_socket_manager.py::TestEmitThoughtWithNodeName::test_emit_thought_with_node_name
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 7 passed, 1 warning in 0.10s =========================

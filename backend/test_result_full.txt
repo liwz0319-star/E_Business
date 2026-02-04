@@ -1,0 +1,670 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 18 items
+
+tests/application/agents/test_copywriting_agent.py::TestCopywritingAgentInit::test_default_initialization PASSED [  5%]
+tests/application/agents/test_copywriting_agent.py::TestCopywritingAgentInit::test_custom_initialization PASSED [ 11%]
+tests/application/agents/test_copywriting_agent.py::TestPlanNode::test_plan_node_success PASSED [ 16%]
+tests/application/agents/test_copywriting_agent.py::TestPlanNode::test_plan_node_emits_thought_on_start PASSED [ 22%]
+tests/application/agents/test_copywriting_agent.py::TestDraftNode::test_draft_node_success PASSED [ 27%]
+tests/application/agents/test_copywriting_agent.py::TestCritiqueNode::test_critique_node_success PASSED [ 33%]
+tests/application/agents/test_copywriting_agent.py::TestFinalizeNode::test_finalize_node_success PASSED [ 38%]
+tests/application/agents/test_copywriting_agent.py::TestFinalizeNode::test_finalize_node_emits_result PASSED [ 44%]
+tests/application/agents/test_copywriting_agent.py::TestFullWorkflow::test_run_full_workflow PASSED [ 50%]
+tests/application/agents/test_copywriting_agent.py::TestFullWorkflow::test_run_generates_workflow_id_if_not_provided PASSED [ 55%]
+tests/application/agents/test_copywriting_agent.py::TestAsyncRun::test_run_async_returns_workflow_id_immediately PASSED [ 61%]
+tests/application/agents/test_copywriting_agent.py::TestErrorHandling::test_plan_node_emits_error_on_failure PASSED [ 66%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_thought_includes_node_name PASSED [ 72%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_tool_call_events_for_plan_node PASSED [ 77%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_emit_tool_call_error_on_streaming_failure PASSED [ 83%]
+tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_each_node_uses_correct_node_name FAILED [ 88%]
+tests/application/agents/test_copywriting_agent.py::TestStreamingFallback::test_streaming_fallback_on_failure PASSED [ 94%]
+tests/application/agents/test_copywriting_agent.py::TestStreamingFallback::test_streaming_success_uses_streaming_method PASSED [100%]
+
+================================== FAILURES ===================================
+__________ TestSocketIOEvents.test_each_node_uses_correct_node_name ___________
+
+self = <app.application.agents.copywriting_agent.CopywritingAgent object at 0x00000274A79CC150>
+prompt = '你是一位资深的文案审核编辑。请对以下营销文案进行专业审核，并提出具体的改进建议。\n\n待审核文案:\nFinal content\n\n请从以下方面进行审核:\n1. **语言表达**: 是否流畅、专业、有感染力？\n2. **营销...晰传达？\n4. **行动号召**: CTA是否有效？\n5. **结构布局**: 文案结构是否合理？\n\n请提供:\n- 3-5条具体的改进建议\n- 每条建议说明原因和修改方向\n- 优先级标注（高/中/低）\n\n请用中文输出。'
+workflow_id = 'node-name-test', node_name = 'critique'
+
+    async def _generate_with_streaming(
+        self,
+        prompt: str,
+        workflow_id: str,
+        node_name: str,
+    ) -> str:
+        """
+        Generate text with streaming callback for real-time thought updates.
+    
+        Emits reasoning_content in real-time as the AI "thinks".
+    
+        IMPORTANT: Falls back to non-streaming mode if streaming fails,
+        with a warning log. This ensures resilience even if streaming
+        is temporarily unavailable.
+    
+        Args:
+            prompt: Prompt for generation
+            workflow_id: Workflow ID for event correlation
+            node_name: Name of the current node (e.g., "plan", "draft")
+    
+        Returns:
+            Generated text content
+    
+        Raises:
+            HTTPClientError: On generation failure (even fallback fails)
+        """
+        async def stream_callback(chunk: StreamChunk) -> None:
+            """Callback for streaming chunks."""
+            try:
+                # Emit reasoning content if available
+                if chunk.reasoning_content:
+                    await socket_manager.emit_thought(
+                        workflow_id=workflow_id,
+                        content=chunk.reasoning_content,
+                        node_name=node_name
+                    )
+            except Exception as e:
+                # Rate-limited logging to prevent log flooding
+                error_key = f"emit_thought_{workflow_id}"
+                if await self._should_log_error(error_key):
+                    cooldown = settings.error_log_cooldown_seconds
+                    logger.warning(
+                        f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
+                    )
+    
+        try:
+            # Emit tool_call event before DeepSeek API call (fixes issue #7)
+            await socket_manager.emit_tool_call(
+                workflow_id=workflow_id,
+                tool_name="deepseek_generate",
+                status="in_progress",
+                message=f"Calling DeepSeek API for {node_name}"
+            )
+    
+            generator = ProviderFactory.get_provider("deepseek")
+            async with generator:
+>               response = await generator.generate_stream_with_callback(
+                    request=GenerationRequest(
+                        prompt=prompt,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    ),
+                    callback=stream_callback,
+                )
+E               TypeError: object MagicMock can't be used in 'await' expression
+
+app\application\agents\copywriting_agent.py:252: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <AsyncMock name='ProviderFactory.get_provider().generate' id='2700051524688'>
+args = (GenerationRequest(prompt='你是一位资深的文案审核编辑。请对以下营销文案进行专业审核，并提出具体的改进建议。\n\n待审核文案:\nFinal content\n\n请从以下方面进行审核:\n1. **语言表达... 优先级标注（高/中/低）\n\n请用中文输出。', model='deepseek-chat', temperature=0.7, max_tokens=2000, stream=False, provider_config={}),)
+kwargs = {}
+_call = call(GenerationRequest(prompt='你是一位资深的文案审核编辑。请对以下营销文案进行专业审核，并提出具体的改进建议。\n\n待审核文案:\nFinal content\n\n请从以下方面进行审核:\n1. **...- 优先级标注（高/中/低）\n\n请用中文输出。', model='deepseek-chat', temperature=0.7, max_tokens=2000, stream=False, provider_config={}))
+effect = <list_iterator object at 0x00000274A78F0310>
+
+    async def _execute_mock_call(self, /, *args, **kwargs):
+        # This is nearly just like super(), except for special handling
+        # of coroutines
+    
+        _call = _Call((args, kwargs), two=True)
+        self.await_count += 1
+        self.await_args = _call
+        self.await_args_list.append(_call)
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+                raise effect
+            elif not _callable(effect):
+                try:
+>                   result = next(effect)
+                             ^^^^^^^^^^^^
+E                   StopIteration
+
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:2243: StopIteration
+
+During handling of the above exception, another exception occurred:
+
+self = <langgraph.pregel.runner.PregelRunner object at 0x00000274A799F950>
+tasks = (PregelExecutableTask(name='critique_step', input={'product_name': 'Test Product', 'features': ['Feature 1'], 'workflo...recurse=True, explode_args=False, func_accepts_config=True, func_accepts={}, _is_channel_writer=True)], subgraphs=[]),)
+
+    async def atick(
+        self,
+        tasks: Iterable[PregelExecutableTask],
+        *,
+        reraise: bool = True,
+        timeout: Optional[float] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+        get_waiter: Optional[Callable[[], asyncio.Future[None]]] = None,
+    ) -> AsyncIterator[None]:
+        def writer(
+            task: PregelExecutableTask,
+            writes: Sequence[tuple[str, Any]],
+            *,
+            calls: Optional[Sequence[Call]] = None,
+        ) -> Sequence[Optional[asyncio.Future]]:
+            if all(w[0] != PUSH for w in writes):
+                return task.config[CONF][CONFIG_KEY_SEND](writes)
+    
+            # schedule PUSH tasks, collect futures
+            scratchpad: PregelScratchpad = task.config[CONF][CONFIG_KEY_SCRATCHPAD]
+            rtn: dict[int, Optional[asyncio.Future]] = {}
+            for idx, w in enumerate(writes):
+                # bail if not a PUSH write
+                if w[0] != PUSH:
+                    continue
+                # schedule the next task, if the callback returns one
+                wcall = calls[idx] if calls is not None else None
+                if next_task := self.schedule_task(
+                    task, scratchpad.call_counter(), wcall
+                ):
+                    # if the parent task was retried,
+                    # the next task might already be running
+                    if fut := next(
+                        (
+                            f
+                            for f, t in futures.items()
+                            if t is not None and t == next_task.id
+                        ),
+                        None,
+                    ):
+                        # if the parent task was retried,
+                        # the next task might already be running
+                        rtn[idx] = fut
+                    elif next_task.writes:
+                        # if it already ran, return the result
+                        fut = asyncio.Future(loop=loop)
+                        ret = next(
+                            (v for c, v in next_task.writes if c == RETURN), MISSING
+                        )
+                        if ret is not MISSING:
+                            fut.set_result(ret)
+                        elif exc := next(
+                            (v for c, v in next_task.writes if c == ERROR), None
+                        ):
+                            fut.set_exception(
+                                exc
+                                if isinstance(exc, BaseException)
+                                else Exception(exc)
+                            )
+                        else:
+                            fut.set_result(None)
+                        rtn[idx] = fut
+                    else:
+                        # schedule the next task
+                        fut = cast(
+                            asyncio.Future,
+                            self.submit(
+                                arun_with_retry,
+                                next_task,
+                                retry_policy,
+                                stream=self.use_astream,
+                                configurable={
+                                    CONFIG_KEY_SEND: partial(writer, next_task),
+                                    CONFIG_KEY_CALL: partial(call, next_task),
+                                },
+                                __name__=t.name,
+                                __cancel_on_exit__=True,
+                                __reraise_on_exit__=reraise,
+                                # starting a new task in the next tick ensures
+                                # updates from this tick are committed/streamed first
+                                __next_tick__=True,
+                            ),
+                        )
+                        futures[fut] = next_task
+                        rtn[idx] = fut
+            return [rtn.get(i) for i in range(len(writes))]
+    
+        def call(
+            task: PregelExecutableTask,
+            func: Callable[[Any], Union[Awaitable[Any], Any]],
+            input: Any,
+            *,
+            retry: Optional[RetryPolicy] = None,
+            callbacks: Callbacks = None,
+        ) -> Union[asyncio.Future[Any], concurrent.futures.Future[Any]]:
+            (fut,) = writer(
+                task,
+                [(PUSH, None)],
+                calls=[Call(func, input, retry=retry, callbacks=callbacks)],
+            )
+            assert fut is not None, "writer did not return a future for call"
+            # return a chained future to ensure commit() callback is called
+            # before the returned future is resolved, to ensure stream order etc
+            try:
+                in_async = asyncio.current_task() is not None
+            except RuntimeError:
+                in_async = False
+            # if in async context return an async future
+            # otherwise return a chained sync future
+            if in_async:
+                if isinstance(fut, asyncio.Task):
+                    sfut: Union[asyncio.Future[Any], concurrent.futures.Future[Any]] = (
+                        asyncio.Future(loop=loop)
+                    )
+                    loop.call_soon_threadsafe(chain_future, fut, sfut)
+                    return sfut
+                else:
+                    # already wrapped in a future
+                    return fut
+            else:
+                sfut = concurrent.futures.Future()
+                loop.call_soon_threadsafe(chain_future, fut, sfut)
+                return sfut
+    
+        loop = asyncio.get_event_loop()
+        tasks = tuple(tasks)
+        futures = FuturesDict(
+            callback=self.commit,
+            event=asyncio.Event(),
+            future_type=asyncio.Future,
+        )
+        # give control back to the caller
+        yield
+        # fast path if single task with no waiter and no timeout
+        if len(tasks) == 1 and get_waiter is None and timeout is None:
+            t = tasks[0]
+            try:
+>               await arun_with_retry(
+                    t,
+                    retry_policy,
+                    stream=self.use_astream,
+                    configurable={
+                        CONFIG_KEY_SEND: partial(writer, t),
+                        CONFIG_KEY_CALL: partial(call, t),
+                    },
+                )
+
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\langgraph\pregel\runner.py:444: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\langgraph\pregel\retry.py:128: in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\langgraph\utils\runnable.py:583: in ainvoke
+    input = await step.ainvoke(input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\langgraph\utils\runnable.py:371: in ainvoke
+    ret = await asyncio.create_task(coro, context=context)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\application\agents\copywriting_agent.py:426: in critique_node
+    critique = await self._generate_with_streaming(prompt, workflow_id, "critique")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\application\agents\copywriting_agent.py:281: in _generate_with_streaming
+    return await self._generate(prompt, workflow_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\application\agents\copywriting_agent.py:186: in _generate
+    response = await generator.generate(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <AsyncMock name='ProviderFactory.get_provider().generate' id='2700051524688'>
+args = (GenerationRequest(prompt='你是一位资深的文案审核编辑。请对以下营销文案进行专业审核，并提出具体的改进建议。\n\n待审核文案:\nFinal content\n\n请从以下方面进行审核:\n1. **语言表达... 优先级标注（高/中/低）\n\n请用中文输出。', model='deepseek-chat', temperature=0.7, max_tokens=2000, stream=False, provider_config={}),)
+kwargs = {}
+_call = call(GenerationRequest(prompt='你是一位资深的文案审核编辑。请对以下营销文案进行专业审核，并提出具体的改进建议。\n\n待审核文案:\nFinal content\n\n请从以下方面进行审核:\n1. **...- 优先级标注（高/中/低）\n\n请用中文输出。', model='deepseek-chat', temperature=0.7, max_tokens=2000, stream=False, provider_config={}))
+effect = <list_iterator object at 0x00000274A78F0310>
+
+    async def _execute_mock_call(self, /, *args, **kwargs):
+        # This is nearly just like super(), except for special handling
+        # of coroutines
+    
+        _call = _Call((args, kwargs), two=True)
+        self.await_count += 1
+        self.await_args = _call
+        self.await_args_list.append(_call)
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+                raise effect
+            elif not _callable(effect):
+                try:
+                    result = next(effect)
+                except StopIteration:
+                    # It is impossible to propagate a StopIteration
+                    # through coroutines because of PEP 479
+>                   raise StopAsyncIteration
+E                   StopAsyncIteration
+E                   During task with name 'critique_step' and id '7afdf62b-4e0a-3fda-8012-ccff557dedfa'
+
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:2247: StopAsyncIteration
+
+The above exception was the direct cause of the following exception:
+
+self = <test_copywriting_agent.TestSocketIOEvents object at 0x00000274A67BA210>
+mock_socket_manager = <MagicMock name='socket_manager' id='2700051682640'>
+mock_provider_factory = (<MagicMock name='ProviderFactory' id='2700051744208'>, <MagicMock name='ProviderFactory.get_provider()' id='2700051672016'>)
+
+    @pytest.mark.asyncio
+    async def test_each_node_uses_correct_node_name(
+        self,
+        mock_socket_manager,
+        mock_provider_factory,
+    ):
+        """Verify each node emits thought with its own node_name."""
+        mock_factory, mock_generator = mock_provider_factory
+    
+        responses = [
+            "Plan content",
+            "Draft content",
+            "Critique content",
+            "Final content",
+        ]
+        mock_generator.generate = AsyncMock(
+            side_effect=[MagicMock(content=r) for r in responses]
+        )
+    
+        agent = CopywritingAgent()
+>       result = await agent.run(
+            product_name="Test Product",
+            features=["Feature 1"],
+            workflow_id="node-name-test"
+        )
+
+tests\application\agents\test_copywriting_agent.py:467: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\application\agents\copywriting_agent.py:557: in run
+    result = await self._graph.ainvoke(initial_state, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\langgraph\pregel\__init__.py:2389: in ainvoke
+    async for chunk in self.astream(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <langgraph.graph.state.CompiledStateGraph object at 0x00000274A79B0790>
+input = {'brand_guidelines': None, 'critique': None, 'current_stage': None, 'draft': None, ...}
+config = {'callbacks': None, 'configurable': {'thread_id': 'node-name-test'}, 'metadata': ChainMap({'thread_id': 'node-name-test'}), 'recursion_limit': 25, ...}
+
+    async def astream(
+        self,
+        input: Union[dict[str, Any], Any],
+        config: Optional[RunnableConfig] = None,
+        *,
+        stream_mode: Optional[Union[StreamMode, list[StreamMode]]] = None,
+        output_keys: Optional[Union[str, Sequence[str]]] = None,
+        interrupt_before: Optional[Union[All, Sequence[str]]] = None,
+        interrupt_after: Optional[Union[All, Sequence[str]]] = None,
+        debug: Optional[bool] = None,
+        subgraphs: bool = False,
+    ) -> AsyncIterator[Union[dict[str, Any], Any]]:
+        """Stream graph steps for a single input.
+    
+        Args:
+            input: The input to the graph.
+            config: The configuration to use for the run.
+            stream_mode: The mode to stream output, defaults to self.stream_mode.
+                Options are:
+    
+                - `"values"`: Emit all values in the state after each step.
+                    When used with functional API, values are emitted once at the end of the workflow.
+                - `"updates"`: Emit only the node or task names and updates returned by the nodes or tasks after each step.
+                    If multiple updates are made in the same step (e.g. multiple nodes are run) then those updates are emitted separately.
+                - `"custom"`: Emit custom data from inside nodes or tasks using `StreamWriter`.
+                - `"messages"`: Emit LLM messages token-by-token together with metadata for any LLM invocations inside nodes or tasks.
+                - `"debug"`: Emit debug events with as much information as possible for each step.
+            output_keys: The keys to stream, defaults to all non-context channels.
+            interrupt_before: Nodes to interrupt before, defaults to all nodes in the graph.
+            interrupt_after: Nodes to interrupt after, defaults to all nodes in the graph.
+            debug: Whether to print debug information during execution, defaults to False.
+            subgraphs: Whether to stream subgraphs, defaults to False.
+    
+        Yields:
+            The output of each step in the graph. The output shape depends on the stream_mode.
+    
+        Examples:
+            Using different stream modes with a graph:
+            ```pycon
+            >>> import operator
+            >>> from typing_extensions import Annotated, TypedDict
+            >>> from langgraph.graph import StateGraph, START
+            ...
+            >>> class State(TypedDict):
+            ...     alist: Annotated[list, operator.add]
+            ...     another_list: Annotated[list, operator.add]
+            ...
+            >>> builder = StateGraph(State)
+            >>> builder.add_node("a", lambda _state: {"another_list": ["hi"]})
+            >>> builder.add_node("b", lambda _state: {"alist": ["there"]})
+            >>> builder.add_edge("a", "b")
+            >>> builder.add_edge(START, "a")
+            >>> graph = builder.compile()
+            ```
+            With stream_mode="values":
+    
+            ```pycon
+            >>> async for event in graph.astream({"alist": ['Ex for stream_mode="values"']}, stream_mode="values"):
+            ...     print(event)
+            {'alist': ['Ex for stream_mode="values"'], 'another_list': []}
+            {'alist': ['Ex for stream_mode="values"'], 'another_list': ['hi']}
+            {'alist': ['Ex for stream_mode="values"', 'there'], 'another_list': ['hi']}
+            ```
+            With stream_mode="updates":
+    
+            ```pycon
+            >>> async for event in graph.astream({"alist": ['Ex for stream_mode="updates"']}, stream_mode="updates"):
+            ...     print(event)
+            {'a': {'another_list': ['hi']}}
+            {'b': {'alist': ['there']}}
+            ```
+            With stream_mode="debug":
+    
+            ```pycon
+            >>> async for event in graph.astream({"alist": ['Ex for stream_mode="debug"']}, stream_mode="debug"):
+            ...     print(event)
+            {'type': 'task', 'timestamp': '2024-06-23T...+00:00', 'step': 1, 'payload': {'id': '...', 'name': 'a', 'input': {'alist': ['Ex for stream_mode="debug"'], 'another_list': []}, 'triggers': ['start:a']}}
+            {'type': 'task_result', 'timestamp': '2024-06-23T...+00:00', 'step': 1, 'payload': {'id': '...', 'name': 'a', 'result': [('another_list', ['hi'])]}}
+            {'type': 'task', 'timestamp': '2024-06-23T...+00:00', 'step': 2, 'payload': {'id': '...', 'name': 'b', 'input': {'alist': ['Ex for stream_mode="debug"'], 'another_list': ['hi']}, 'triggers': ['a']}}
+            {'type': 'task_result', 'timestamp': '2024-06-23T...+00:00', 'step': 2, 'payload': {'id': '...', 'name': 'b', 'result': [('alist', ['there'])]}}
+            ```
+    
+            With stream_mode="custom":
+    
+            ```pycon
+            >>> from langgraph.types import StreamWriter
+            ...
+            >>> async def node_a(state: State, writer: StreamWriter):
+            ...     writer({"custom_data": "foo"})
+            ...     return {"alist": ["hi"]}
+            ...
+            >>> builder = StateGraph(State)
+            >>> builder.add_node("a", node_a)
+            >>> builder.add_edge(START, "a")
+            >>> graph = builder.compile()
+            ...
+            >>> async for event in graph.astream({"alist": ['Ex for stream_mode="custom"']}, stream_mode="custom"):
+            ...     print(event)
+            {'custom_data': 'foo'}
+            ```
+    
+            With stream_mode="messages":
+    
+            ```pycon
+            >>> from typing_extensions import Annotated, TypedDict
+            >>> from langgraph.graph import StateGraph, START
+            >>> from langchain_openai import ChatOpenAI
+            ...
+            >>> llm = ChatOpenAI(model="gpt-4o-mini")
+            ...
+            >>> class State(TypedDict):
+            ...     question: str
+            ...     answer: str
+            ...
+            >>> async def node_a(state: State):
+            ...     response = await llm.ainvoke(state["question"])
+            ...     return {"answer": response.content}
+            ...
+            >>> builder = StateGraph(State)
+            >>> builder.add_node("a", node_a)
+            >>> builder.add_edge(START, "a")
+            >>> graph = builder.compile()
+    
+            >>> for event in graph.stream({"question": "What is the capital of France?"}, stream_mode="messages"):
+            ...     print(event)
+            (AIMessageChunk(content='The', additional_kwargs={}, response_metadata={}, id='...'), {'langgraph_step': 1, 'langgraph_node': 'a', 'langgraph_triggers': ['start:a'], 'langgraph_path': ('__pregel_pull', 'a'), 'langgraph_checkpoint_ns': '...', 'checkpoint_ns': '...', 'ls_provider': 'openai', 'ls_model_name': 'gpt-4o-mini', 'ls_model_type': 'chat', 'ls_temperature': 0.7})
+            (AIMessageChunk(content=' capital', additional_kwargs={}, response_metadata={}, id='...'), {'langgraph_step': 1, 'langgraph_node': 'a', 'langgraph_triggers': ['start:a'], ...})
+            (AIMessageChunk(content=' of', additional_kwargs={}, response_metadata={}, id='...'), {...})
+            (AIMessageChunk(content=' France', additional_kwargs={}, response_metadata={}, id='...'), {...})
+            (AIMessageChunk(content=' is', additional_kwargs={}, response_metadata={}, id='...'), {...})
+            (AIMessageChunk(content=' Paris', additional_kwargs={}, response_metadata={}, id='...'), {...})
+            ```
+        """
+    
+        stream = AsyncQueue()
+        aioloop = asyncio.get_running_loop()
+        stream_put = cast(
+            Callable[[StreamChunk], None],
+            partial(aioloop.call_soon_threadsafe, stream.put_nowait),
+        )
+    
+        def output() -> Iterator:
+            while True:
+                try:
+                    ns, mode, payload = stream.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+                if subgraphs and isinstance(stream_mode, list):
+                    yield (ns, mode, payload)
+                elif isinstance(stream_mode, list):
+                    yield (mode, payload)
+                elif subgraphs:
+                    yield (ns, payload)
+                else:
+                    yield payload
+    
+        config = ensure_config(self.config, config)
+        callback_manager = get_async_callback_manager_for_config(config)
+        run_manager = await callback_manager.on_chain_start(
+            None,
+            input,
+            name=config.get("run_name", self.get_name()),
+            run_id=config.get("run_id"),
+        )
+        # if running from astream_log() run each proc with streaming
+        do_stream = next(
+            (
+                cast(_StreamingCallbackHandler, h)
+                for h in run_manager.handlers
+                if isinstance(h, _StreamingCallbackHandler)
+            ),
+            None,
+        )
+        try:
+            # assign defaults
+            (
+                debug,
+                stream_modes,
+                output_keys,
+                interrupt_before_,
+                interrupt_after_,
+                checkpointer,
+                store,
+            ) = self._defaults(
+                config,
+                stream_mode=stream_mode,
+                output_keys=output_keys,
+                interrupt_before=interrupt_before,
+                interrupt_after=interrupt_after,
+                debug=debug,
+            )
+            # set up subgraph checkpointing
+            if self.checkpointer is True:
+                ns = cast(str, config[CONF][CONFIG_KEY_CHECKPOINT_NS])
+                config[CONF][CONFIG_KEY_CHECKPOINT_NS] = recast_checkpoint_ns(ns)
+            # set up messages stream mode
+            if "messages" in stream_modes:
+                run_manager.inheritable_handlers.append(
+                    StreamMessagesHandler(stream_put)
+                )
+            # set up custom stream mode
+            if "custom" in stream_modes:
+                config[CONF][CONFIG_KEY_STREAM_WRITER] = (
+                    lambda c: aioloop.call_soon_threadsafe(
+                        stream.put_nowait, ((), "custom", c)
+                    )
+                )
+            async with AsyncPregelLoop(
+                input,
+                stream=StreamProtocol(stream.put_nowait, stream_modes),
+                config=config,
+                store=store,
+                checkpointer=checkpointer,
+                nodes=self.nodes,
+                specs=self.channels,
+                output_keys=output_keys,
+                stream_keys=self.stream_channels_asis,
+                interrupt_before=interrupt_before_,
+                interrupt_after=interrupt_after_,
+                manager=run_manager,
+                debug=debug,
+            ) as loop:
+                # create runner
+                runner = PregelRunner(
+                    submit=config[CONF].get(CONFIG_KEY_RUNNER_SUBMIT, loop.submit),
+                    put_writes=loop.put_writes,
+                    schedule_task=loop.accept_push,
+                    use_astream=do_stream is not None,
+                    node_finished=config[CONF].get(CONFIG_KEY_NODE_FINISHED),
+                )
+                # enable subgraph streaming
+                if subgraphs:
+                    loop.config[CONF][CONFIG_KEY_STREAM] = StreamProtocol(
+                        stream_put, stream_modes
+                    )
+                # enable concurrent streaming
+                if (
+                    self.stream_eager
+                    or subgraphs
+                    or "messages" in stream_modes
+                    or "custom" in stream_modes
+                ):
+    
+                    def get_waiter() -> asyncio.Task[None]:
+                        return aioloop.create_task(stream.wait())
+    
+                else:
+                    get_waiter = None  # type: ignore[assignment]
+                # Similarly to Bulk Synchronous Parallel / Pregel model
+                # computation proceeds in steps, while there are channel updates
+                # channel updates from step N are only visible in step N+1
+                # channels are guaranteed to be immutable for the duration of the step,
+                # with channel updates applied only at the transition between steps
+                while loop.tick(input_keys=self.input_channels):
+>                   async for _ in runner.atick(
+                        loop.tasks.values(),
+                        timeout=self.step_timeout,
+                        retry_policy=self.retry_policy,
+                        get_waiter=get_waiter,
+                    ):
+E                   RuntimeError: async generator raised StopAsyncIteration
+
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\langgraph\pregel\__init__.py:2274: RuntimeError
+------------------------------ Captured log call ------------------------------
+WARNING  app.application.agents.copywriting_agent:copywriting_agent.py:280 Streaming failed for plan, falling back to regular generation: object MagicMock can't be used in 'await' expression
+WARNING  app.application.agents.copywriting_agent:copywriting_agent.py:280 Streaming failed for plan, falling back to regular generation: object MagicMock can't be used in 'await' expression
+WARNING  app.application.agents.copywriting_agent:copywriting_agent.py:280 Streaming failed for draft, falling back to regular generation: object MagicMock can't be used in 'await' expression
+WARNING  app.application.agents.copywriting_agent:copywriting_agent.py:280 Streaming failed for draft, falling back to regular generation: object MagicMock can't be used in 'await' expression
+WARNING  app.application.agents.copywriting_agent:copywriting_agent.py:280 Streaming failed for critique, falling back to regular generation: object MagicMock can't be used in 'await' expression
+WARNING  app.application.agents.copywriting_agent:copywriting_agent.py:280 Streaming failed for critique, falling back to regular generation: object MagicMock can't be used in 'await' expression
+ERROR    app.application.agents.copywriting_agent:copywriting_agent.py:625 Workflow 16a9501e-e6f1-43de-80a4-e7494c272ae8 failed: async generator raised StopAsyncIteration
+============================== warnings summary ===============================
+tests/application/agents/test_copywriting_agent.py::TestPlanNode::test_plan_node_success
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/application/agents/test_copywriting_agent.py::TestSocketIOEvents::test_each_node_uses_correct_node_name
+=================== 1 failed, 17 passed, 1 warning in 1.20s ===================

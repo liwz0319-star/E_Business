@@ -102,7 +102,7 @@ class RegisterResponse(BaseModel):
 
 
 @router.post(
-    "/register",
+    "/signup",
     response_model=RegisterResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
