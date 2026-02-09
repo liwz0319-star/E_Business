@@ -20,8 +20,9 @@ class TestDeepSeekGeneratorInit:
         generator = DeepSeekGenerator(api_key="test-key")
         assert generator.api_key == "test-key"
 
-    def test_init_without_api_key_raises(self):
+    def test_init_without_api_key_raises(self, monkeypatch):
         """Test that missing API key raises ValueError."""
+        monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
         with patch("app.infrastructure.generators.deepseek.settings") as mock_settings:
             mock_settings.deepseek_api_key = None
             with pytest.raises(ValueError, match="API key is required"):

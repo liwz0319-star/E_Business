@@ -1,0 +1,35 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.AUTO
+collecting ... collected 10 items
+
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_url_response PASSED [ 10%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_base64_response PASSED [ 20%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_formats_mcp_request_correctly PASSED [ 30%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_timeout PASSED [ 40%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_connection_error PASSED [ 50%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_tool_error PASSED [ 60%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_context_manager PASSED [ 70%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_parse_mcp_image_response_url PASSED [ 80%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_parse_mcp_image_response_missing_content PASSED [ 90%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorExceptions::test_mcp_image_generator_error PASSED [100%]
+
+============================== warnings summary ===============================
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_url_response
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 10 passed, 1 warning in 0.17s ========================

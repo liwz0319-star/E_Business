@@ -1,20 +1,83 @@
 import React, { useState } from 'react';
+import authService from '../services/authService';
+import { handleAuthError } from '../utils/errorHandler';
 
 interface SignupProps {
     onSignIn: () => void;
     onSignUp?: () => void;
 }
 
+// 密码强度验证：至少8字符，包含大小写字母和数字
+const validatePassword = (password: string): { valid: boolean; message: string } => {
+    if (password.length < 8) {
+        return { valid: false, message: '密码至少需要8个字符' };
+    }
+    if (!/[A-Z]/.test(password)) {
+        return { valid: false, message: '密码需要包含至少一个大写字母' };
+    }
+    if (!/[a-z]/.test(password)) {
+        return { valid: false, message: '密码需要包含至少一个小写字母' };
+    }
+    if (!/[0-9]/.test(password)) {
+        return { valid: false, message: '密码需要包含至少一个数字' };
+    }
+    return { valid: true, message: '' };
+};
+
 const Signup: React.FC<SignupProps> = ({ onSignIn, onSignUp }) => {
-    const [fullName, setFullName] = useState('');
+    // CRITICAL-003: 移除未使用的fullName字段
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [termsAccepted, setTermsAccepted] = useState(false); // CRITICAL-002: 跟踪条款接受状态
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handlePasswordChange = (value: string) => {
+        setPassword(value);
+        if (value) {
+            const validation = validatePassword(value);
+            setPasswordError(validation.valid ? null : validation.message);
+        } else {
+            setPasswordError(null);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // For now, just call onSignUp if provided, or maybe navigate to home eventually
-        if (onSignUp) onSignUp();
+        setErrorMessage(null);
+
+        // 密码验证
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.valid) {
+            setErrorMessage(passwordValidation.message);
+            return;
+        }
+
+        // 确认密码匹配
+        if (password !== confirmPassword) {
+            setErrorMessage('两次输入的密码不一致');
+            return;
+        }
+
+        // CRITICAL-002: 验证服务条款已接受
+        if (!termsAccepted) {
+            setErrorMessage('请同意服务条款和隐私政策');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await authService.register(email, password);
+            // 注册成功，导航到登录页面
+            onSignIn();
+        } catch (error: any) {
+            // MEDIUM-003: 使用统一错误处理
+            setErrorMessage(handleAuthError(error, 'signup'));
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -57,19 +120,7 @@ const Signup: React.FC<SignupProps> = ({ onSignIn, onSignUp }) => {
                         <p className="text-[#5b8b86] dark:text-primary/70">Start your 14-day free trial today.</p>
                     </div>
                     <form className="space-y-5" onSubmit={handleSubmit}>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-[#101918] dark:text-white/90">Full Name</label>
-                            <div className="relative">
-                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5b8b86] text-xl">person</span>
-                                <input
-                                    className="w-full pl-10 pr-4 py-3 bg-background-light dark:bg-white/5 border border-[#d4e3e1] dark:border-white/10 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white placeholder:text-[#5b8b86]/60"
-                                    placeholder="John Doe"
-                                    type="text"
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                />
-                            </div>
-                        </div>
+                        {/* CRITICAL-003: 移除fullName字段 */}
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-semibold text-[#101918] dark:text-white/90">Email Address</label>
                             <div className="relative">
@@ -87,12 +138,13 @@ const Signup: React.FC<SignupProps> = ({ onSignIn, onSignUp }) => {
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-semibold text-[#101918] dark:text-white/90">Password</label>
                                 <input
-                                    className="w-full px-4 py-3 bg-background-light dark:bg-white/5 border border-[#d4e3e1] dark:border-white/10 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white placeholder:text-[#5b8b86]/60"
+                                    className={`w-full px-4 py-3 bg-background-light dark:bg-white/5 border ${passwordError ? 'border-red-500' : 'border-[#d4e3e1] dark:border-white/10'} rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white placeholder:text-[#5b8b86]/60`}
                                     placeholder="••••••••"
                                     type="password"
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) => handlePasswordChange(e.target.value)}
                                 />
+                                {passwordError && <p className="text-xs text-red-500 mt-1">{passwordError}</p>}
                             </div>
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-semibold text-[#101918] dark:text-white/90">Confirm Password</label>
@@ -105,15 +157,39 @@ const Signup: React.FC<SignupProps> = ({ onSignIn, onSignUp }) => {
                                 />
                             </div>
                         </div>
+                        {errorMessage && (
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                                <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+                            </div>
+                        )}
                         <div className="flex items-start gap-3 py-2">
-                            <input className="mt-1 size-4 rounded border-[#d4e3e1] text-primary focus:ring-primary" id="terms" type="checkbox" />
+                            <input
+                                className="mt-1 size-4 rounded border-[#d4e3e1] text-primary focus:ring-primary"
+                                id="terms"
+                                type="checkbox"
+                                checked={termsAccepted}
+                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                            />
                             <label className="text-sm text-[#5b8b86] dark:text-white/60 leading-tight" htmlFor="terms">
                                 I agree to the <a className="text-[#101918] dark:text-primary font-semibold hover:underline" href="#">Terms of Service</a> and <a className="text-[#101918] dark:text-primary font-semibold hover:underline" href="#">Privacy Policy</a>.
                             </label>
                         </div>
-                        <button className="w-full bg-primary hover:bg-primary/90 text-[#101918] font-bold py-4 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" type="submit">
-                            Create Account
-                            <span className="material-symbols-outlined">arrow_forward</span>
+                        <button
+                            className="w-full bg-primary hover:bg-primary/90 text-[#101918] font-bold py-4 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="submit"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <>
+                                    <span className="animate-spin material-symbols-outlined">progress_activity</span>
+                                    Creating...
+                                </>
+                            ) : (
+                                <>
+                                    Create Account
+                                    <span className="material-symbols-outlined">arrow_forward</span>
+                                </>
+                            )}
                         </button>
                     </form>
                     <div className="flex items-center gap-4 my-8">

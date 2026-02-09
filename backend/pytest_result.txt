@@ -1,0 +1,343 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.AUTO
+collecting ... collected 16 items
+
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_url_response FAILED [  6%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_base64_response PASSED [ 12%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_formats_mcp_request_correctly FAILED [ 18%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_timeout PASSED [ 25%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_connection_error PASSED [ 31%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_tool_error PASSED [ 37%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_context_manager PASSED [ 43%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_parse_mcp_image_response_url PASSED [ 50%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_parse_mcp_image_response_missing_content PASSED [ 56%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorURLValidation::test_validate_url_allowed_localhost PASSED [ 62%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorURLValidation::test_validate_url_allowed_127 PASSED [ 68%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorURLValidation::test_validate_url_blocked_domain PASSED [ 75%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorURLValidation::test_validate_url_invalid_scheme PASSED [ 81%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorURLValidation::test_custom_allowed_domains PASSED [ 87%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorURLValidation::test_resolve_image_url_validates_external PASSED [ 93%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorURLValidation::test_resolve_image_url_skip_validation PASSED [100%]
+
+================================== FAILURES ===================================
+____________ TestMCPImageGenerator.test_generate_with_url_response ____________
+
+self = <test_mcp_image_generator.TestMCPImageGenerator object at 0x00000181857F72D0>
+generator = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x000001818584DFD0>
+sample_request = ImageGenerationRequest(prompt='A beautiful sunset over the ocean', width=512, height=512, style=None, negative_prompt=None, num_inference_steps=50, guidance_scale=7.5)
+mock_mcp_client = <AsyncMock spec='MCPHttpClient' id='1655803103056'>
+
+    @pytest.mark.asyncio
+    async def test_generate_with_url_response(self, generator, sample_request, mock_mcp_client):
+        """Test generation when MCP returns a URL directly."""
+        mock_mcp_client.call_tool.return_value = {
+            "content": [
+                {
+                    "type": "image",
+                    "data": "http://example.com/generated.png",
+                    "mimeType": "image/png"
+                }
+            ],
+            "metadata": {
+                "width": 512,
+                "height": 512,
+                "model": "stable-diffusion-xl",
+                "provider": "mcp"
+            }
+        }
+    
+>       result = await generator.generate(sample_request)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\infrastructure\mcp\test_mcp_image_generator.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x000001818584DFD0>
+request = ImageGenerationRequest(prompt='A beautiful sunset over the ocean', width=512, height=512, style=None, negative_prompt=None, num_inference_steps=50, guidance_scale=7.5)
+
+    async def generate(
+        self,
+        request: ImageGenerationRequest,
+    ) -> ImageArtifact:
+        """Generate an image using MCP protocol.
+    
+        Args:
+            request: Image generation request
+    
+        Returns:
+            ImageArtifact with generated image URL and metadata
+    
+        Raises:
+            MCPImageGeneratorError: If generation fails
+        """
+        logger.info(f"Starting MCP image generation for prompt: {request.prompt[:50]}...")
+    
+        # Build tool arguments
+        arguments = self._build_tool_arguments(request)
+    
+        try:
+            # Call MCP tool
+            response = await self.mcp_client.call_tool(
+                self.tool_name,
+                arguments,
+            )
+    
+            # Parse response
+            image_data, mime_type, metadata = await self._parse_mcp_image_response(response)
+    
+            # Resolve to URL (upload Base64 if needed)
+>           image_url = await self._resolve_image_url(image_data, mime_type)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+app\infrastructure\mcp\mcp_image_generator.py:290: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x000001818584DFD0>
+image_data = 'http://example.com/generated.png', mime_type = 'image/png'
+skip_validation = False
+
+    async def _resolve_image_url(
+        self,
+        image_data: str,
+        mime_type: str,
+        skip_validation: bool = False,
+    ) -> str:
+        """Resolve image data to a URL.
+    
+        If image_data is already a URL, validates and returns it.
+        If image_data is Base64, uploads to MinIO and returns URL.
+    
+        Args:
+            image_data: Image URL or Base64 data
+            mime_type: MIME type of the image
+            skip_validation: Skip URL validation (for trusted sources)
+    
+        Returns:
+            Accessible URL for the image
+    
+        Raises:
+            MCPInvalidURLError: If URL validation fails
+        """
+        # Check if it's already a URL
+        if image_data.startswith(("http://", "https://")):
+            if not skip_validation:
+>               self._validate_url(image_data)
+
+app\infrastructure\mcp\mcp_image_generator.py:239: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x000001818584DFD0>
+url = 'http://example.com/generated.png'
+
+    def _validate_url(self, url: str) -> bool:
+        """Validate URL against allowed domains to prevent SSRF.
+    
+        Args:
+            url: URL to validate
+    
+        Returns:
+            True if URL is valid and allowed
+    
+        Raises:
+            MCPInvalidURLError: If URL is not allowed
+        """
+        try:
+            parsed = urlparse(url)
+    
+            # Check scheme
+            if parsed.scheme not in ("http", "https"):
+                raise MCPInvalidURLError(
+                    f"Invalid URL scheme: {parsed.scheme}. Only http/https allowed."
+                )
+    
+            # Extract hostname
+            hostname = parsed.hostname
+            if not hostname:
+                raise MCPInvalidURLError("URL missing hostname")
+    
+            # Check against allowed domains
+            # Allow exact match or subdomain match
+            is_allowed = any(
+                hostname == domain or hostname.endswith(f".{domain}")
+                for domain in self.allowed_domains
+            )
+    
+            if not is_allowed:
+                logger.warning(
+                    f"URL domain '{hostname}' not in allowed list: {self.allowed_domains}"
+                )
+>               raise MCPInvalidURLError(
+                    f"URL domain '{hostname}' is not allowed. "
+                    f"Allowed domains: {', '.join(self.allowed_domains)}"
+                )
+E               app.infrastructure.mcp.mcp_image_generator.MCPInvalidURLError: URL domain 'example.com' is not allowed. Allowed domains: 127.0.0.1, minio, localhost
+
+app\infrastructure\mcp\mcp_image_generator.py:202: MCPInvalidURLError
+------------------------------ Captured log call ------------------------------
+WARNING  app.infrastructure.mcp.mcp_image_generator:mcp_image_generator.py:199 URL domain 'example.com' not in allowed list: {'127.0.0.1', 'minio', 'localhost'}
+______ TestMCPImageGenerator.test_generate_formats_mcp_request_correctly ______
+
+self = <test_mcp_image_generator.TestMCPImageGenerator object at 0x00000181858D23D0>
+generator = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x00000181858F47D0>
+sample_request = ImageGenerationRequest(prompt='A beautiful sunset over the ocean', width=512, height=512, style=None, negative_prompt=None, num_inference_steps=50, guidance_scale=7.5)
+mock_mcp_client = <AsyncMock spec='MCPHttpClient' id='1655803022672'>
+
+    @pytest.mark.asyncio
+    async def test_generate_formats_mcp_request_correctly(self, generator, sample_request, mock_mcp_client):
+        """Test that generator formats MCP request according to spec."""
+        mock_mcp_client.call_tool.return_value = {
+            "content": [{"type": "image", "data": "http://example.com/img.png", "mimeType": "image/png"}],
+            "metadata": {}
+        }
+    
+>       await generator.generate(sample_request)
+
+tests\infrastructure\mcp\test_mcp_image_generator.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x00000181858F47D0>
+request = ImageGenerationRequest(prompt='A beautiful sunset over the ocean', width=512, height=512, style=None, negative_prompt=None, num_inference_steps=50, guidance_scale=7.5)
+
+    async def generate(
+        self,
+        request: ImageGenerationRequest,
+    ) -> ImageArtifact:
+        """Generate an image using MCP protocol.
+    
+        Args:
+            request: Image generation request
+    
+        Returns:
+            ImageArtifact with generated image URL and metadata
+    
+        Raises:
+            MCPImageGeneratorError: If generation fails
+        """
+        logger.info(f"Starting MCP image generation for prompt: {request.prompt[:50]}...")
+    
+        # Build tool arguments
+        arguments = self._build_tool_arguments(request)
+    
+        try:
+            # Call MCP tool
+            response = await self.mcp_client.call_tool(
+                self.tool_name,
+                arguments,
+            )
+    
+            # Parse response
+            image_data, mime_type, metadata = await self._parse_mcp_image_response(response)
+    
+            # Resolve to URL (upload Base64 if needed)
+>           image_url = await self._resolve_image_url(image_data, mime_type)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+app\infrastructure\mcp\mcp_image_generator.py:290: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x00000181858F47D0>
+image_data = 'http://example.com/img.png', mime_type = 'image/png'
+skip_validation = False
+
+    async def _resolve_image_url(
+        self,
+        image_data: str,
+        mime_type: str,
+        skip_validation: bool = False,
+    ) -> str:
+        """Resolve image data to a URL.
+    
+        If image_data is already a URL, validates and returns it.
+        If image_data is Base64, uploads to MinIO and returns URL.
+    
+        Args:
+            image_data: Image URL or Base64 data
+            mime_type: MIME type of the image
+            skip_validation: Skip URL validation (for trusted sources)
+    
+        Returns:
+            Accessible URL for the image
+    
+        Raises:
+            MCPInvalidURLError: If URL validation fails
+        """
+        # Check if it's already a URL
+        if image_data.startswith(("http://", "https://")):
+            if not skip_validation:
+>               self._validate_url(image_data)
+
+app\infrastructure\mcp\mcp_image_generator.py:239: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.infrastructure.mcp.mcp_image_generator.MCPImageGenerator object at 0x00000181858F47D0>
+url = 'http://example.com/img.png'
+
+    def _validate_url(self, url: str) -> bool:
+        """Validate URL against allowed domains to prevent SSRF.
+    
+        Args:
+            url: URL to validate
+    
+        Returns:
+            True if URL is valid and allowed
+    
+        Raises:
+            MCPInvalidURLError: If URL is not allowed
+        """
+        try:
+            parsed = urlparse(url)
+    
+            # Check scheme
+            if parsed.scheme not in ("http", "https"):
+                raise MCPInvalidURLError(
+                    f"Invalid URL scheme: {parsed.scheme}. Only http/https allowed."
+                )
+    
+            # Extract hostname
+            hostname = parsed.hostname
+            if not hostname:
+                raise MCPInvalidURLError("URL missing hostname")
+    
+            # Check against allowed domains
+            # Allow exact match or subdomain match
+            is_allowed = any(
+                hostname == domain or hostname.endswith(f".{domain}")
+                for domain in self.allowed_domains
+            )
+    
+            if not is_allowed:
+                logger.warning(
+                    f"URL domain '{hostname}' not in allowed list: {self.allowed_domains}"
+                )
+>               raise MCPInvalidURLError(
+                    f"URL domain '{hostname}' is not allowed. "
+                    f"Allowed domains: {', '.join(self.allowed_domains)}"
+                )
+E               app.infrastructure.mcp.mcp_image_generator.MCPInvalidURLError: URL domain 'example.com' is not allowed. Allowed domains: 127.0.0.1, minio, localhost
+
+app\infrastructure\mcp\mcp_image_generator.py:202: MCPInvalidURLError
+------------------------------ Captured log call ------------------------------
+WARNING  app.infrastructure.mcp.mcp_image_generator:mcp_image_generator.py:199 URL domain 'example.com' not in allowed list: {'127.0.0.1', 'minio', 'localhost'}
+============================== warnings summary ===============================
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_url_response
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_url_response
+FAILED tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_formats_mcp_request_correctly
+=================== 2 failed, 14 passed, 1 warning in 0.85s ===================

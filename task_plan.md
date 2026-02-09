@@ -1,117 +1,78 @@
-# Task Plan: CommerceAI Assistant
-<!--
-  WHAT: This is your roadmap for the entire task. Think of it as your "working memory on disk."
-  WHY: After 50+ tool calls, your original goals can get forgotten. This file keeps them fresh.
-  WHEN: Create this FIRST, before starting any work. Update after each phase completes.
--->
-
-## Project Overview
-<!-- E-Commerce AI Assistant using Google Gemini API -->
-**CommerceAI Assistant** - A React-based e-commerce assistant that generates:
-- Marketing copy and product descriptions (TEXT)
-- Product images and visuals (IMAGE)
-- Product showcase videos (VIDEO)
-- Market insights and trends (SEARCH)
-
----
+# Task Plan: 修复异步任务中API key环境变量加载失败问题
+## Goal
+修复E2E测试中发现的"DeepSeek API key is required"错误，使前端WebSocket异步工作流能够正常加载环境变量并成功执行文案生成。
 
 ## Current Phase
-<!-- Currently in setup/planning phase -->
-Phase 1
-
----
+Phase 3
 
 ## Phases
 
-### Phase 1: Project Setup & Configuration
-- [x] Project structure created
-- [x] Vite + React + TypeScript configured
-- [x] Google Gemini AI SDK installed
-- [x] Basic UI components created
-- [ ] Environment variables setup
-- [ ] Backend API integration
-- **Status:** in_progress
+### Phase 1: 深度调研与根本原因分析 ✅
+- [x] 理解问题现象和背景
+- [x] 探索配置加载机制（config.py）
+- [x] 探索异步任务执行流程（copywriting_agent.py）
+- [x] 探索WebSocket通信机制
+- [x] 确定根本原因：环境加载脆弱性
+- **Status:** complete
 
-### Phase 2: Content Generation Features
-- [ ] Implement text generation (product descriptions, copy)
-- [ ] Implement image generation (product visuals)
-- [ ] Implement video generation (product showcases)
-- [ ] Implement search/market insights
-- **Status:** pending
+### Phase 2: 设计解决方案 ✅
+- [x] 分析Gemini的深度调研结果
+- [x] 确认main.py的启动验证已完成
+- [x] 设计config.py的多级路径修复方案
+- [x] 设计运行时错误改进方案
+- [x] 更新plan2.md文档
+- **Status:** complete
 
-### Phase 3: UI/UX Enhancement
-- [ ] Image editor integration
-- [ ] User authentication
-- [ ] User profiles and preferences
-- [ ] Notification system
-- **Status:** pending
+### Phase 3: 实施核心修复 ✅
+- [x] 修复config.py的env_file搜索路径
+- [x] 验证修复后的配置加载
+- [x] **Phase 6: 修复全局settings缓存问题**
+  - [x] 修改deepseek.py使用动态get_settings()
+  - [x] 修改copywriting_agent.py的3处settings使用
+  - [x] 修改socket_manager.py使用动态get_settings()
+  - [x] 创建验证脚本并测试通过
+- **Status:** complete
 
-### Phase 4: Backend & API
-- [ ] Backend service architecture
-- [ ] API endpoint design
-- [ ] Rate limiting and error handling
-- [ ] Content caching strategy
-- **Status:** pending
+### Phase 4: 测试与验证 ✅
+- [x] 清理环境并重启后端
+- [x] 验证启动日志显示配置已加载
+- [x] 修复Windows控制台编码问题
+- [x] 确认后端服务正常运行
+- [ ] 运行完整E2E测试（需要前端配合）
+- **Status:** complete (核心验证通过，E2E测试待前端)
 
-### Phase 5: Testing & Deployment
-- [ ] End-to-end testing
-- [ ] Performance optimization
-- [ ] Production build
-- [ ] Deployment configuration
-- **Status:** pending
-
----
+### Phase 5: 交付与文档 ✅
+- [x] 更新plan2.md的最终状态
+- [x] 更新所有计划文件
+- [x] 提供验证报告给用户
+- **Status:** complete
 
 ## Key Questions
-1. **Content Storage Strategy**: Should generated content be persisted? (Need to decide on storage solution)
-2. **User Management**: How to handle user authentication and sessions? (Currently no backend auth)
-3. **API Rate Limits**: How to handle Gemini API rate limits and costs? (Need caching/queue system)
-4. **Content Moderation**: Should there be content filtering for generated outputs?
-5. **Multi-language Support**: Should the assistant support multiple languages?
+1. ✅ 为什么直接API调用成功但WebSocket工作流失败？
+   - 答：环境加载脆弱性，单一`.env`路径在不同执行上下文中不可靠
 
----
+2. ✅ main.py的启动验证是否已经实现？
+   - 答：是，已经在第28-60行实现
+
+3. ⚠️ config.py的修复能否解决问题？
+   - 答：需要测试验证，但理论上应该能解决
 
 ## Decisions Made
 | Decision | Rationale |
 |----------|-----------|
-| React 19 + Vite | Latest React features, fast development experience |
-| TypeScript | Type safety for AI service integration |
-| Google Gemini API | Multi-modal support (text, image, video) in one API |
-| Component-based architecture | Reusable UI elements for different content types |
-
----
-
-## Technical Stack
-| Component | Technology |
-|-----------|------------|
-| **Frontend** | React 19.2.3, TypeScript 5.8.2 |
-| **Build Tool** | Vite 6.2.0 |
-| **AI SDK** | @google/genai 1.37.0 |
-| **Backend** | Node.js (in `backend/` directory) |
-| **API Models** | gemini-3-flash-preview (text), gemini-2.5-flash-image (image), veo-3.1-fast-generate-preview (video) |
-
----
-
-## Key Files
-| File | Purpose |
-|------|---------|
-| `services/geminiService.ts` | Main AI service for content generation |
-| `App.tsx` | Main application component |
-| `业务流程图.md` | Business flow documentation (Chinese) |
-| `agent_design_structure.md` | Agent design documentation |
-
----
+| 采用多级路径策略 | 大大提高在不同环境下找到配置文件的成功率 |
+| 保留所有fallback路径 | 确保向后兼容性 |
+| 启动时强制验证 | Fail Fast原则，避免服务在错误状态下运行 |
+| 分步实施 | 先修复核心问题（config.py），再增强错误处理 |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| | 1 | |
-
----
+| "DeepSeek API key is required" in async tasks | 1 | 确认根本原因：env_file路径不包含backend/.env |
+| 同上 | 2 | 设计多级路径解决方案 |
 
 ## Notes
-- This project uses Chinese documentation (`业务流程图.md`)
-- Update phase status as you progress: pending → in_progress → complete
-- Re-read this plan before major decisions
-- Log ALL errors - they help avoid repetition
-- Generated content uses different Gemini models for each type
+- 核心修复只涉及一个文件：`backend/app/core/config.py`
+- main.py的启动验证已完成，无需修改
+- 修复后必须重启后端并观察启动日志
+- E2E测试是最终验证标准

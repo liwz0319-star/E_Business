@@ -11,7 +11,7 @@ import uuid
 from collections import defaultdict
 from typing import Any, Dict, Optional, TypedDict, List
 
-from app.core.config import settings
+from app.core.config import get_settings
 
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -160,6 +160,7 @@ class CopywritingAgent:
         """Check if enough time has passed since last error log (thread-safe)."""
         async with cls._error_log_lock:
             now = time.time()
+            settings = get_settings()  # CRITICAL FIX: Call get_settings() dynamically
             cooldown = settings.error_log_cooldown_seconds
             if now - cls._error_log_times[error_key] > cooldown:
                 cls._error_log_times[error_key] = now
@@ -268,6 +269,7 @@ class CopywritingAgent:
                 # Rate-limited logging to prevent log flooding
                 error_key = f"emit_thought_{workflow_id}_{node_name}"
                 if await CopywritingAgent._should_log_error(error_key):
+                    settings = get_settings()  # CRITICAL FIX: Call get_settings() dynamically
                     cooldown = settings.error_log_cooldown_seconds
                     logger.warning(
                         f"Failed to emit thought for {node_name} (will suppress similar errors for {cooldown}s): {e}"
@@ -660,6 +662,7 @@ class CopywritingAgent:
             logger.error(f"Workflow {workflow_id} failed: {e}")
             if workflow_id in _workflow_states:
                 _workflow_states[workflow_id]["status"] = "failed"
+                _workflow_states[workflow_id]["error"] = str(e)
             await socket_manager.emit_error(
                 workflow_id=workflow_id,
                 error_code="WORKFLOW_FAILED",

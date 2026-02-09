@@ -1,0 +1,16 @@
+Testing http://localhost:8000/ws/socket.io/?EIO=4&transport=polling...
+Status: 404
+Content: Not Found
+--------------------
+Testing http://localhost:8000/socket.io/?EIO=4&transport=polling...
+Status: 404
+Content: {"detail":"Not Found"}
+--------------------
+Testing http://localhost:8000/ws/?EIO=4&transport=polling...
+Status: 404
+Content: Not Found
+--------------------
+Testing http://localhost:8000/api/v1/copywriting/generate...
+Status: 405
+Content: {"detail":"Method Not Allowed"}
+--------------------

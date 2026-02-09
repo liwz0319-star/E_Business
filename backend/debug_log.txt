@@ -1,0 +1,8 @@
+DEBUG: emit_tool_call start 37396d9f-977c-4122-80e9-30de5a1151ca
+DEBUG: emit_tool_call done
+DEBUG: emit_tool_call start 37396d9f-977c-4122-80e9-30de5a1151ca
+DEBUG: emit_tool_call done
+DEBUG: emit_tool_call start 37396d9f-977c-4122-80e9-30de5a1151ca
+DEBUG: emit_tool_call done
+DEBUG: emit_tool_call start 37396d9f-977c-4122-80e9-30de5a1151ca
+DEBUG: emit_tool_call done

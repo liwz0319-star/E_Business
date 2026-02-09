@@ -5,7 +5,7 @@ Uses pydantic-settings for environment variable management and validation.
 All settings are loaded from environment variables with .env file support.
 """
 
-from functools import lru_cache
+from pathlib import Path
 from typing import List, Optional
 
 from pydantic import Field, field_validator
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     """
     
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(Path(__file__).resolve().parent.parent.parent / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -109,6 +109,45 @@ class Settings(BaseSettings):
         description="Cooldown in seconds between same error logs"
     )
     
+    # MCP Image Generation Configuration
+    mcp_image_server_url: str = Field(
+        default="http://localhost:3000",
+        description="MCP Server URL for image generation"
+    )
+    mcp_image_use_stdio: bool = Field(
+        default=False,
+        description="Use Stdio mode instead of HTTP for MCP"
+    )
+    mcp_image_timeout: int = Field(
+        default=60,
+        description="Request timeout in seconds for MCP image generation"
+    )
+    mcp_image_model: str = Field(
+        default="stable-diffusion-xl",
+        description="Default model for image generation"
+    )
+    image_generator_provider: str = Field(
+        default="mock",
+        description="Image generator provider: 'mock' or 'mcp'"
+    )
+    minio_secure: bool = Field(
+        default=False,
+        description="Use HTTPS for MinIO connections"
+    )
+    minio_max_size_mb: int = Field(
+        default=10,
+        description="Maximum upload size in MB for MinIO"
+    )
+    mcp_allowed_domains: str = Field(
+        default="localhost,127.0.0.1,minio",
+        description="Comma-separated list of allowed domains for MCP URL validation (SSRF prevention)"
+    )
+    
+    @property
+    def mcp_allowed_domains_set(self) -> set:
+        """Parse allowed domains string to set."""
+        return {domain.strip() for domain in self.mcp_allowed_domains.split(",") if domain.strip()}
+    
     @field_validator("app_env")
     @classmethod
     def validate_app_env(cls, v: str) -> str:
@@ -134,12 +173,13 @@ class Settings(BaseSettings):
         return self.app_env == "development"
 
 
-@lru_cache()
 def get_settings() -> Settings:
     """
-    Get cached settings instance.
+    Get fresh settings instance.
     
-    Uses lru_cache to create a singleton settings instance.
+    Returns a new Settings instance on each call to ensure
+    environment variables are always read fresh, especially
+    important for async task contexts.
     """
     return Settings()
 

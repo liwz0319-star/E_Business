@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 import socketio
 
-from app.core.config import settings
+from app.core.config import get_settings
 from app.core.security import decode_access_token
 from app.interface.ws.rate_limiter import connection_rate_limiter
 
@@ -28,8 +28,9 @@ class SocketManager:
     
     def __init__(self):
         # Get CORS origins from settings (filter empty strings)
+        settings = get_settings()  # CRITICAL FIX: Call get_settings() dynamically
         cors_origins = [
-            origin for origin in settings.cors_origins_list 
+            origin for origin in settings.cors_origins_list
             if origin  # Filter empty strings
         ]
         
@@ -42,15 +43,19 @@ class SocketManager:
             engineio_logger=False,
         )
         
-        # Create ASGI app for mounting
-        # Note: socketio_path is NOT set here because main.py mounts at /ws
-        self.app = socketio.ASGIApp(self.sio)
-        
         # Store connected users: {sid: user_id}
         self._connected_users: Dict[str, str] = {}
         
         # Register event handlers
         self._register_handlers()
+    
+    def wrap_app(self, other_app):
+        """
+        Wrap another ASGI app (like FastAPI) with Socket.IO.
+        
+        Socket.IO handles /socket.io path, other_app handles everything else.
+        """
+        return socketio.ASGIApp(self.sio, other_asgi_app=other_app)
     
     def _register_handlers(self) -> None:
         """Register Socket.IO event handlers."""

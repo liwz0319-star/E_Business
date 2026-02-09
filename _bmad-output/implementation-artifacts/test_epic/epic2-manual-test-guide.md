@@ -83,13 +83,13 @@
     *   **Body**:
         ```json
         {
-          "productName": "AI 智能咖啡机",
+          "product_name": "AI 智能咖啡机",
           "features": [
             "语音控制",
             "3秒速热",
             "自定义浓度"
           ],
-          "brandGuidelines": "科技感，现代简约"
+          "brand_guidelines": "科技感，现代简约"
         }
         ```
 
@@ -97,20 +97,20 @@
     ```bash
     curl -X POST "http://localhost:8000/api/v1/copywriting/generate" \
          -H "Content-Type: application/json" \
-         -d "{\"productName\": \"AI 智能咖啡机\", \"features\": [\"语音控制\", \"3秒速热\", \"自定义浓度\"]}"
+         -d "{\"product_name\": \"AI 智能咖啡机\", \"features\": [\"语音控制\", \"3秒速热\", \"自定义浓度\"]}"
     ```
 
 2.  **预期结果**:
-    *   Status Code: `200 OK`
+    *   Status Code: `202 Accepted`
     *   Response Body:
         ```json
         {
-          "workflowId": "UUID-STRING-HERE",
+          "workflow_id": "UUID-STRING-HERE",
           "status": "started",
           "message": "Copywriting workflow initiated. Listen for agent:thought events."
         }
         ```
-    *   **注意**: 记下返回的 `workflowId`，后续测试可能需要。
+    *   **注意**: 记下返回的 `workflow_id`，后续测试可能需要。
 
 ---
 
@@ -169,7 +169,7 @@
         # 2. 触发 API
         print("🚀 Triggering Workflow via API...")
         payload = {
-            "productName": "未来派悬浮滑板",
+            "product_name": "未来派悬浮滑板",
             "features": ["磁悬浮技术", "时速 80km/h", "无线充电"]
         }
         try:
@@ -189,12 +189,12 @@
 
 2.  **准备依赖**:
     ```bash
-    pip install "python-socketio[client]" requests
+    poetry add --group dev "python-socketio[client]" requests
     ```
 
 3.  **运行测试**:
     ```bash
-    python test_socket_workflow.py
+    poetry run python tests/test_socket_workflow.py
     ```
 
 4.  **观察重点**:

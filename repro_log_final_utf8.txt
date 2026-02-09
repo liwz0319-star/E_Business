@@ -1,0 +1,32 @@
+﻿Starting enhanced reproduction script with Auth (Fixed Selectors)...
+Navigating to http://localhost:3000...
+[BROWSER-WS] [WebSocket] Cleaned up
+On Login Page. Switching to Sign Up...
+On Signup Page. Registering user...
+Submitting registration for auto_1770629823181@test.com...
+Waiting for navigation to Home...
+node : SCRIPT CRASH: locator.wa
+itFor: Timeout 15000ms exceeded
+.
+所在位置 行:1 字符: 1
++ node reproduce_issue.cjs > re
+pro_log_final.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          :  
+   NotSpecified: (SCRIPT CRAS  
+  H: l...000ms exceeded.:Str   
+ ing) [], RemoteException
+    + FullyQualifiedErrorId :  
+   NativeCommandError
+ 
+Call log:
+[2m  - waiting for getByText('
+Product Copy').first() to be vi
+sible[22m
+
+    at F:\AAA Work\AIproject\E_
+Business\reproduce_issue.cjs:83
+:58 {
+  name: 'TimeoutError'
+}

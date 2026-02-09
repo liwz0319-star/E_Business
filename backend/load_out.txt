@@ -1,0 +1,4 @@
+Current CWD: F:\AAA Work\AIproject\E_Business\backend
+Checking settings load...
+DeepSeek API Key Loaded: sk-98...f8c
+Env file path in config: F:\AAA Work\AIproject\E_Business\backend\.env

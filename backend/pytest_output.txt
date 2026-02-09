@@ -1,0 +1,144 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.AUTO
+collected 12 items
+
+tests\infrastructure\mcp\test_base_client.py ......F.....                [100%]
+
+================================== FAILURES ===================================
+__________________ TestMCPHttpClient.test_call_tool_timeout ___________________
+
+self = <app.infrastructure.mcp.base_client.MCPHttpClient object at 0x000001F8A6E807D0>
+tool_name = 'generate_image', arguments = {'prompt': 'test'}
+
+    async def call_tool(
+        self,
+        tool_name: str,
+        arguments: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Call an MCP tool via HTTP.
+    
+        Args:
+            tool_name: Name of the tool to call
+            arguments: Tool arguments
+    
+        Returns:
+            Parsed MCP result dictionary
+        """
+        logger.debug(f"Calling MCP tool '{tool_name}' with args: {arguments}")
+    
+        request = self.format_mcp_request(tool_name, arguments)
+    
+        try:
+>           response = await self._send_http_request(request)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+app\infrastructure\mcp\base_client.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <AsyncMock name='_send_http_request' id='2167464961744'>
+args = ({'id': '9f4721e9-1fb0-43ce-ad39-81263a231f28', 'jsonrpc': '2.0', 'method': 'tools/call', 'params': {'arguments': {'prompt': 'test'}, 'name': 'generate_image'}},)
+kwargs = {}
+_call = call({'jsonrpc': '2.0', 'id': '9f4721e9-1fb0-43ce-ad39-81263a231f28', 'method': 'tools/call', 'params': {'name': 'generate_image', 'arguments': {'prompt': 'test'}}})
+effect = TimeoutError()
+
+    async def _execute_mock_call(self, /, *args, **kwargs):
+        # This is nearly just like super(), except for special handling
+        # of coroutines
+    
+        _call = _Call((args, kwargs), two=True)
+        self.await_count += 1
+        self.await_args = _call
+        self.await_args_list.append(_call)
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+>               raise effect
+E               TimeoutError
+
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:2240: TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+self = <test_base_client.TestMCPHttpClient object at 0x000001F8A6F950D0>
+client = <app.infrastructure.mcp.base_client.MCPHttpClient object at 0x000001F8A6E807D0>
+
+    @pytest.mark.asyncio
+    async def test_call_tool_timeout(self, client):
+        """Test timeout handling."""
+        with patch.object(client, '_send_http_request', new_callable=AsyncMock) as mock_send:
+            mock_send.side_effect = asyncio.TimeoutError()
+    
+            with pytest.raises(MCPTimeoutError):
+>               await client.call_tool(
+                    "generate_image",
+                    {"prompt": "test"}
+                )
+
+tests\infrastructure\mcp\test_base_client.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.infrastructure.mcp.base_client.MCPHttpClient object at 0x000001F8A6E807D0>
+tool_name = 'generate_image', arguments = {'prompt': 'test'}
+
+    async def call_tool(
+        self,
+        tool_name: str,
+        arguments: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Call an MCP tool via HTTP.
+    
+        Args:
+            tool_name: Name of the tool to call
+            arguments: Tool arguments
+    
+        Returns:
+            Parsed MCP result dictionary
+        """
+        logger.debug(f"Calling MCP tool '{tool_name}' with args: {arguments}")
+    
+        request = self.format_mcp_request(tool_name, arguments)
+    
+        try:
+            response = await self._send_http_request(request)
+            result = self.parse_mcp_response(response)
+    
+            logger.debug(f"MCP tool '{tool_name}' returned successfully")
+            return result
+    
+        except (MCPToolCallError, MCPTimeoutError, MCPConnectionError):
+            raise
+        except ConnectionError as e:
+            raise MCPConnectionError(str(e)) from e
+        except Exception as e:
+            logger.error(f"Unexpected error calling MCP tool '{tool_name}': {e}")
+>           raise MCPToolCallError(
+                message=f"Unexpected error: {e}",
+                tool_name=tool_name,
+            ) from e
+E           app.infrastructure.mcp.base_client.MCPToolCallError: Unexpected error:
+
+app\infrastructure\mcp\base_client.py:280: MCPToolCallError
+------------------------------ Captured log call ------------------------------
+ERROR    app.infrastructure.mcp.base_client:base_client.py:279 Unexpected error calling MCP tool 'generate_image':
+============================== warnings summary ===============================
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_format_mcp_request
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_call_tool_timeout
+=================== 1 failed, 11 passed, 1 warning in 0.71s ===================

@@ -18,6 +18,8 @@ from .agent_state import (
     InvalidStageTransitionError,
     VALID_TRANSITIONS,
 )
+from .image_artifact import ImageArtifact
+from .image_request import ImageGenerationRequest as ImageRequest
 
 __all__ = [
     "User",
@@ -30,5 +32,8 @@ __all__ = [
     "CopywritingStage",
     "InvalidStageTransitionError",
     "VALID_TRANSITIONS",
+    "ImageArtifact",
+    "ImageRequest",
 ]
+
 

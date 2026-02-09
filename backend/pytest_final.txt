@@ -1,0 +1,57 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.AUTO
+collecting ... collected 32 items
+
+tests/infrastructure/mcp/test_base_client.py::TestMCPBaseClient::test_cannot_instantiate_abstract_class PASSED [  3%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPBaseClient::test_subclass_must_implement_call_tool PASSED [  6%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_format_mcp_request PASSED [  9%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_parse_mcp_response_success PASSED [ 12%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_parse_mcp_response_error PASSED [ 15%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_call_tool_success PASSED [ 18%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_call_tool_timeout PASSED [ 21%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_call_tool_connection_error PASSED [ 25%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_context_manager_http_client PASSED [ 28%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPExceptions::test_mcp_tool_call_error PASSED [ 31%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPExceptions::test_mcp_timeout_error PASSED [ 34%]
+tests/infrastructure/mcp/test_base_client.py::TestMCPExceptions::test_mcp_connection_error PASSED [ 37%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_url_response PASSED [ 40%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_with_base64_response PASSED [ 43%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_formats_mcp_request_correctly PASSED [ 46%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_timeout PASSED [ 50%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_connection_error PASSED [ 53%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_generate_handles_tool_error PASSED [ 56%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_context_manager PASSED [ 59%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_parse_mcp_image_response_url PASSED [ 62%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGenerator::test_parse_mcp_image_response_missing_content PASSED [ 65%]
+tests/infrastructure/mcp/test_mcp_image_generator.py::TestMCPImageGeneratorExceptions::test_mcp_image_generator_error PASSED [ 68%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_init_with_defaults PASSED [ 71%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_init_with_secure PASSED [ 75%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_is_base64 PASSED [ 78%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_generate_object_name PASSED [ 81%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_generate_object_name_jpeg PASSED [ 84%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_upload_base64_image_success PASSED [ 87%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_upload_base64_image_with_secure PASSED [ 90%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_upload_base64_image_decode_error PASSED [ 93%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOClient::test_upload_base64_image_upload_error PASSED [ 96%]
+tests/infrastructure/storage/test_minio_client.py::TestMinIOExceptions::test_minio_upload_error PASSED [100%]
+
+============================== warnings summary ===============================
+tests/infrastructure/mcp/test_base_client.py::TestMCPHttpClient::test_format_mcp_request
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 32 passed, 1 warning in 0.25s ========================

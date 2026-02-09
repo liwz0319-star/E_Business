@@ -1,0 +1,24 @@
+{
+  "date": "2026-02-09T11:42:36.565Z",
+  "scenario": "single-upload-photo-generate-copy",
+  "baseUrl": "http://localhost:3000",
+  "imagePath": "F:\\AAA Work\\AIproject\\E_Business\\e2e-test-final-result.png",
+  "login": {
+    "attempted": true,
+    "success": true
+  },
+  "upload": {
+    "success": true
+  },
+  "api": null,
+  "websocketErrors": [],
+  "final": {
+    "success": false,
+    "state": "unknown",
+    "message": ""
+  },
+  "screenshot": "F:\\AAA Work\\AIproject\\E_Business\\_bmad-output\\implementation-artifacts\\test_epic\\single-upload-copy-final.png",
+  "errors": [
+    "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /^Generate$/i })\u001b[22m\n\n    at [stdin]:88:61"
+  ]
+}

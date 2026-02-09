@@ -1,0 +1,434 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0
+rootdir: F:\AAA Work\AIproject\E_Business\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.6.4, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=Mode.AUTO
+collected 220 items
+
+tests\application\agents\test_copywriting_agent.py ..................    [  8%]
+tests\application\agents\test_copywriting_agent_streaming.py ........... [ 13%]
+....                                                                     [ 15%]
+tests\application\agents\test_image_agent.py ..............              [ 21%]
+tests\domain\entities\test_agent_state.py ..........................     [ 33%]
+tests\e2e\test_image_workflow_e2e.py .......                             [ 36%]
+tests\infrastructure\mcp\test_base_client.py ............                [ 41%]
+tests\infrastructure\mcp\test_mcp_image_generator.py ..........          [ 46%]
+tests\infrastructure\storage\test_minio_client.py ..........             [ 50%]
+tests\interface\routes\test_copywriting.py F...FFF..                     [ 55%]
+tests\interface\test_images_api.py .........                             [ 59%]
+tests\interface\test_socket_manager.py .......                           [ 62%]
+tests\test_auth.py .........                                             [ 66%]
+tests\test_auth_integration.py EEEEEEEE                                  [ 70%]
+tests\test_deepseek_generator.py .....................                   [ 79%]
+tests\test_health.py .                                                   [ 80%]
+tests\test_http_client.py ......                                         [ 82%]
+tests\test_rate_limiter.py .........                                     [ 86%]
+tests\test_socketio.py F.........                                        [ 91%]
+tests\test_socketio_e2e.py ......                                        [ 94%]
+poetry : Task was destroyed but
+ it is pending!
+所在位置 行:1 字符: 1
++ poetry run pytest tests/ -v -
+-tb=short -q 2>&1 | Out-File -E
+ncoding u ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo          :  
+   NotSpecified: (Task was de  
+  stroyed but it is pending!   
+ :String) [], RemoteExcepti    
+on
+    + FullyQualifiedErrorId :  
+   NativeCommandError
+ 
+task: <Task pending name='Task-
+336' coro=<AsyncSocket._send_pi
+ng() running at C:\Users\LENOVO
+\AppData\Local\pypoetry\Cache\v
+irtualenvs\backend-Fqerr5-5-py3
+.11\Lib\site-packages\engineio\
+async_socket.py:135> wait_for=<
+Future pending cb=[Task.task_wa
+keup()]>>
+Task was destroyed but it is pe
+nding!
+task: <Task pending name='Task-
+369' coro=<AsyncSocket._send_pi
+ng() running at C:\Users\LENOVO
+\AppData\Local\pypoetry\Cache\v
+irtualenvs\backend-Fqerr5-5-py3
+.11\Lib\site-packages\engineio\
+async_socket.py:135> wait_for=<
+Future pending cb=[Task.task_wa
+keup()]>>
+Task was destroyed but it is pe
+nding!
+task: <Task pending name='Task-
+401' coro=<AsyncSocket._send_pi
+ng() running at C:\Users\LENOVO
+\AppData\Local\pypoetry\Cache\v
+irtualenvs\backend-Fqerr5-5-py3
+.11\Lib\site-packages\engineio\
+async_socket.py:135> wait_for=<
+Future pending cb=[Task.task_wa
+keup()]>>
+Task was destroyed but it is pe
+nding!
+task: <Task pending name='Task-
+433' coro=<AsyncSocket._send_pi
+ng() running at C:\Users\LENOVO
+\AppData\Local\pypoetry\Cache\v
+irtualenvs\backend-Fqerr5-5-py3
+.11\Lib\site-packages\engineio\
+async_socket.py:135> wait_for=<
+Future pending cb=[Task.task_wa
+keup()]>>
+Task was destroyed but it is pe
+nding!
+task: <Task pending name='Task-
+465' coro=<AsyncSocket._send_pi
+ng() running at C:\Users\LENOVO
+\AppData\Local\pypoetry\Cache\v
+irtualenvs\backend-Fqerr5-5-py3
+.11\Lib\site-packages\engineio\
+async_socket.py:135> wait_for=<
+Future pending cb=[Task.task_wa
+keup()]>>
+tests\test_socketio_integration.py F............                         [100%]
+
+=================================== ERRORS ====================================
+_ ERROR at setup of TestAuthIntegrationFlow.test_register_login_access_protected_flow _
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+_ ERROR at setup of TestAuthIntegrationFlow.test_login_with_invalid_credentials_returns_401 _
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+_ ERROR at setup of TestAuthIntegrationFlow.test_login_with_nonexistent_user_returns_401 _
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+__ ERROR at setup of TestAuthIntegrationFlow.test_invalid_token_returns_401 ___
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+__ ERROR at setup of TestAuthIntegrationFlow.test_expired_token_returns_401 ___
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+_ ERROR at setup of TestAuthEndpointValidation.test_register_duplicate_email_returns_400 _
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+_ ERROR at setup of TestAuthEndpointValidation.test_register_invalid_email_format _
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+_ ERROR at setup of TestAuthEndpointValidation.test_login_invalid_email_format _
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:347: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:329: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:73: in async_client
+    app.dependency_overrides[get_async_session] = override_get_async_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ASGIApp' object has no attribute 'dependency_overrides'
+================================== FAILURES ===================================
+____________ TestCopywritingGenerateEndpoint.test_generate_success ____________
+tests\interface\routes\test_copywriting.py:39: in test_generate_success
+    assert response.status_code == 202
+E   assert 422 == 202
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+___ TestCopywritingGenerateEndpoint.test_generate_without_brand_guidelines ____
+tests\interface\routes\test_copywriting.py:99: in test_generate_without_brand_guidelines
+    assert response.status_code == 202
+E   assert 422 == 202
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+_ TestCopywritingGenerateEndpoint.test_generate_calls_agent_with_correct_params _
+tests\interface\routes\test_copywriting.py:121: in test_generate_calls_agent_with_correct_params
+    mock_instance.run_async.assert_called_once()
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:918: in assert_called_once
+    raise AssertionError(msg)
+E   AssertionError: Expected 'run_async' to have been called once. Called 0 times.
+__ TestCopywritingGenerateEndpoint.test_generate_returns_camel_case_response __
+tests\interface\routes\test_copywriting.py:140: in test_generate_returns_camel_case_response
+    assert "workflowId" in data  # camelCase, not workflow_id
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert 'workflowId' in {'detail': [{'input': {'features': ['F1'], 'productName': 'Test'}, 'loc': ['body', 'product_name'], 'msg': 'Field requ...ut': 'Test', 'loc': ['body', 'productName'], 'msg': 'Extra inputs are not permitted', 'type': 'extra_forbidden', ...}]}
+__________ TestSocketManagerUnit.test_socket_manager_initialization ___________
+tests\test_socketio.py:22: in test_socket_manager_initialization
+    assert manager.app is not None
+           ^^^^^^^^^^^
+E   AttributeError: 'SocketManager' object has no attribute 'app'
+___________ TestSocketIOIntegration.test_connection_with_valid_jwt ____________
+tests\test_socketio_integration.py:53: in test_connection_with_valid_jwt
+    assert socket_manager.app is not None
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'SocketManager' object has no attribute 'app'
+============================== warnings summary ===============================
+tests/application/agents/test_copywriting_agent.py::TestPlanNode::test_plan_node_success
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\pytest_asyncio\plugin.py:761: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  F:\AAA Work\AIproject\E_Business\backend\tests\conftest.py:28
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connect_with_valid_jwt
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\websockets\legacy\__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+    warnings.warn(  # deprecated in 14.0 - 2024-11-09
+
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connect_with_valid_jwt
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py:23: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+    from websockets.server import WebSocketServerProtocol
+
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connect_with_valid_jwt
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_without_token
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_without_auth_object
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_with_invalid_token
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_with_expired_token
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\websockets\legacy\server.py:1178: DeprecationWarning: remove second argument of ws_handler
+    warnings.warn("remove second argument of ws_handler", DeprecationWarning)
+
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connect_with_valid_jwt
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_without_token
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_without_auth_object
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_with_invalid_token
+tests/test_socketio_e2e.py::TestSocketIOE2E::test_connection_rejected_with_expired_token
+  C:\Users\LENOVO\AppData\Local\pypoetry\Cache\virtualenvs\backend-Fqerr5-5-py3.11\Lib\site-packages\websockets\exceptions.py:125: DeprecationWarning: ConnectionClosed.code is deprecated; use Protocol.close_code or ConnectionClosed.rcvd.code
+    warnings.warn(  # deprecated in 13.1 - 2024-09-21
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/interface/routes/test_copywriting.py::TestCopywritingGenerateEndpoint::test_generate_success
+FAILED tests/interface/routes/test_copywriting.py::TestCopywritingGenerateEndpoint::test_generate_without_brand_guidelines
+FAILED tests/interface/routes/test_copywriting.py::TestCopywritingGenerateEndpoint::test_generate_calls_agent_with_correct_params
+FAILED tests/interface/routes/test_copywriting.py::TestCopywritingGenerateEndpoint::test_generate_returns_camel_case_response
+FAILED tests/test_socketio.py::TestSocketManagerUnit::test_socket_manager_initialization
+FAILED tests/test_socketio_integration.py::TestSocketIOIntegration::test_connection_with_valid_jwt
+ERROR tests/test_auth_integration.py::TestAuthIntegrationFlow::test_register_login_access_protected_flow
+ERROR tests/test_auth_integration.py::TestAuthIntegrationFlow::test_login_with_invalid_credentials_returns_401
+ERROR tests/test_auth_integration.py::TestAuthIntegrationFlow::test_login_with_nonexistent_user_returns_401
+ERROR tests/test_auth_integration.py::TestAuthIntegrationFlow::test_invalid_token_returns_401
+ERROR tests/test_auth_integration.py::TestAuthIntegrationFlow::test_expired_token_returns_401
+ERROR tests/test_auth_integration.py::TestAuthEndpointValidation::test_register_duplicate_email_returns_400
+ERROR tests/test_auth_integration.py::TestAuthEndpointValidation::test_register_invalid_email_format
+ERROR tests/test_auth_integration.py::TestAuthEndpointValidation::test_login_invalid_email_format
+============ 6 failed, 206 passed, 13 warnings, 8 errors in 11.39s ============
+Task was destroyed but it is pe
+nding!
+task: <Task pending name='Task-
+458' coro=<LifespanOn.main() ru
+nning at C:\Users\LENOVO\AppDat
+a\Local\pypoetry\Cache\virtuale
+nvs\backend-Fqerr5-5-py3.11\Lib
+\site-packages\uvicorn\lifespan
+\on.py:86> wait_for=<Future pen
+ding cb=[Task.task_wakeup()]>>
+--- Logging error ---
+Traceback (most recent call las
+t):
+  File "C:\Users\LENOVO\AppData
+\Local\Programs\Python\Python31
+1\Lib\asyncio\queues.py", line 
+158, in get
+    await getter
+GeneratorExit
+
+During handling of the above ex
+ception, another exception occu
+rred:
+
+Traceback (most recent call las
+t):
+  File "C:\Users\LENOVO\AppData
+\Local\pypoetry\Cache\virtualen
+vs\backend-Fqerr5-5-py3.11\Lib\
+site-packages\starlette\routing
+.py", line 743, in lifespan
+    await receive()
+  File "C:\Users\LENOVO\AppData
+\Local\pypoetry\Cache\virtualen
+vs\backend-Fqerr5-5-py3.11\Lib\
+site-packages\uvicorn\lifespan\
+on.py", line 137, in receive
+    return await self.receive_q
+ueue.get()
+           ^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData
+\Local\Programs\Python\Python31
+1\Lib\asyncio\queues.py", line 
+160, in get
+    getter.cancel()  # Just in 
+case getter is not done yet.
+    ^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData
+\Local\Programs\Python\Python31
+1\Lib\asyncio\base_events.py", 
+line 762, in call_soon
+    self._check_closed()
+  File "C:\Users\LENOVO\AppData
+\Local\Programs\Python\Python31
+1\Lib\asyncio\base_events.py", 
+line 520, in _check_closed
+    raise RuntimeError('Event l
+oop is closed')
+RuntimeError: Event loop is clo
+sed
+
+During handling of the above ex
+ception, another exception occu
+rred:
+
+Traceback (most recent call las
+t):
+  File "C:\Users\LENOVO\AppData
+\Local\Programs\Python\Python31
+1\Lib\logging\__init__.py", lin
+e 1113, in emit
+    stream.write(msg + self.ter
+minator)
+ValueError: I/O operation on cl
+osed file.
+Call stack:
+  File "C:\Users\LENOVO\AppData
+\Local\pypoetry\Cache\virtualen
+vs\backend-Fqerr5-5-py3.11\Lib\
+site-packages\starlette\routing
+.py", line 747, in lifespan
+    await send({"type": "lifesp
+an.shutdown.failed", "message":
+ exc_text})
+  File "C:\Users\LENOVO\AppData
+\Local\pypoetry\Cache\virtualen
+vs\backend-Fqerr5-5-py3.11\Lib\
+site-packages\uvicorn\lifespan\
+on.py", line 134, in send
+    self.logger.error(message["
+message"])
+Message: 'Traceback (most recen
+t call last):\n  File "C:\\User
+s\\LENOVO\\AppData\\Local\\Prog
+rams\\Python\\Python311\\Lib\\a
+syncio\\queues.py", line 158, i
+n get\n    await getter\nGenera
+torExit\n\nDuring handling of t
+he above exception, another exc
+eption occurred:\n\nTraceback (
+most recent call last):\n  File
+ "C:\\Users\\LENOVO\\AppData\\L
+ocal\\pypoetry\\Cache\\virtuale
+nvs\\backend-Fqerr5-5-py3.11\\L
+ib\\site-packages\\starlette\\r
+outing.py", line 743, in lifesp
+an\n    await receive()\n  File
+ "C:\\Users\\LENOVO\\AppData\\L
+ocal\\pypoetry\\Cache\\virtuale
+nvs\\backend-Fqerr5-5-py3.11\\L
+ib\\site-packages\\uvicorn\\lif
+espan\\on.py", line 137, in rec
+eive\n    return await self.rec
+eive_queue.get()\n           ^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n 
+ File "C:\\Users\\LENOVO\\AppDa
+ta\\Local\\Programs\\Python\\Py
+thon311\\Lib\\asyncio\\queues.p
+y", line 160, in get\n    gette
+r.cancel()  # Just in case gett
+er is not done yet.\n    ^^^^^^
+^^^^^^^^^\n  File "C:\\Users\\L
+ENOVO\\AppData\\Local\\Programs
+\\Python\\Python311\\Lib\\async
+io\\base_events.py", line 762, 
+in call_soon\n    self._check_c
+losed()\n  File "C:\\Users\\LEN
+OVO\\AppData\\Local\\Programs\\
+Python\\Python311\\Lib\\asyncio
+\\base_events.py", line 520, in
+ _check_closed\n    raise Runti
+meError(\'Event loop is closed\
+')\nRuntimeError: Event loop is
+ closed\n'
+Arguments: ()

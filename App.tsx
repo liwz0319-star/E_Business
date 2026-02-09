@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -18,13 +18,21 @@ import ImageDetail from './components/ImageDetail';
 import ProjectTimeline from './components/ProjectTimeline';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import { generateContent, GenerationType } from './services/geminiService';
+import ThinkingLog, { ThinkingStep, ConnectionStatus, eventToStep } from './components/ThinkingLog';
 
-export type AppView = 'login' | 'signup' | 'home' | 'chat' | 'gallery' | 'insights' | 'settings' | 'help-support' | 'projects' | 'asset-detail' | 'video-detail' | 'image-detail' | 'project-timeline';
+import { generateContent, GenerationType } from './services/geminiService';
+import authService from './services/authService';
+import copywritingService from './services/copywriting';
+import webSocketService, { ThoughtEvent, ResultEvent, ErrorEvent, ToolCallEvent } from './services/webSocket';
+
+export type AppView = 'login' | 'signup' | 'home' | 'chat' | 'gallery' | 'image-generation' | 'insights' | 'settings' | 'help-support' | 'projects' | 'asset-detail' | 'video-detail' | 'image-detail' | 'project-timeline';
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [currentView, setCurrentView] = useState<AppView>('login');
+  // 初始化时检查token，有token则直接进入home页面
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    return authService.isAuthenticated() ? 'home' : 'login';
+  });
   const [prompt, setPrompt] = useState('');
   const [userMessage, setUserMessage] = useState<string | null>(null);
   const [sentUserImage, setSentUserImage] = useState<string | null>(null);
@@ -36,6 +44,12 @@ const App: React.FC = () => {
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
+  // WebSocket and Thinking Stream State (Story 2-4)
+  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [wsError, setWsError] = useState<string | null>(null);
+  const [isThinkingComplete, setIsThinkingComplete] = useState(false);
 
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,7 +67,26 @@ const App: React.FC = () => {
     if (currentView === 'chat' && chatScrollRef.current) {
       chatScrollRef.current.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
     }
-  }, [isGenerating, result, currentView]);
+  }, [isGenerating, result, currentView, thinkingSteps]);
+
+  // WebSocket cleanup on unmount (Task 4.2)
+  useEffect(() => {
+    return () => {
+      webSocketService.disconnect();
+    };
+  }, []);
+
+  // Logout handler
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentView('login');
+    // 清理状态
+    setResult(null);
+    setUserMessage(null);
+    setSentUserImage(null);
+    setPrompt('');
+    setUploadedImage(null);
+  };
 
   const handleGenerate = async (type: GenerationType = GenerationType.TEXT, overridePrompt?: string, overrideImage?: string) => {
     const finalPrompt = overridePrompt || prompt;
@@ -73,6 +106,111 @@ const App: React.FC = () => {
     setIsGenerating(true);
     setActiveGenerationType(type);
 
+    // Reset thinking stream state
+    setThinkingSteps([]);
+    setWsError(null);
+    setIsThinkingComplete(false);
+
+    // Use copywriting service for TEXT type (Story 2-4)
+    if (type === GenerationType.TEXT && authService.isAuthenticated()) {
+      try {
+        // Connect WebSocket with handlers
+        setConnectionStatus('connecting');
+        const connected = webSocketService.connect({
+          onConnect: () => setConnectionStatus('connected'),
+          onDisconnect: () => setConnectionStatus('disconnected'),
+          onConnectError: (err) => {
+            setConnectionStatus('error');
+            setWsError(`连接失败: ${err.message}`);
+          },
+          onThought: (event: ThoughtEvent) => {
+            setThinkingSteps(prev => {
+              // Mark previous steps as completed
+              const updated = prev.map(s => ({ ...s, status: 'completed' as const }));
+              // Add new step as active
+              const newSteps = [...updated, eventToStep(event, 'active')];
+              // MEMORY-001 Fix: Limit to 100 steps to prevent memory issues
+              const MAX_STEPS = 100;
+              return newSteps.length > MAX_STEPS ? newSteps.slice(-MAX_STEPS) : newSteps;
+            });
+          },
+          onToolCall: (event: ToolCallEvent) => {
+            setThinkingSteps(prev => {
+              const updated = prev.map(s => ({ ...s, status: 'completed' as const }));
+              const newStep: ThinkingStep = {
+                id: `tool-${Date.now()}`,
+                nodeName: event.data.tool_name,
+                content: event.data.message || `Calling tool: ${event.data.tool_name}...`,
+                timestamp: event.timestamp,
+                status: 'active'
+              };
+              return [...updated, newStep];
+            });
+          },
+          onResult: (event: ResultEvent) => {
+            setThinkingSteps(prev => prev.map(s => ({ ...s, status: 'completed' as const })));
+            setIsThinkingComplete(true);
+
+            // Handle result - TEXT/Copywriting
+            const content = event.data.finalCopy;
+
+            setResult({
+              type,
+              content: content,
+              title: finalPrompt.length > 30 ? finalPrompt.substring(0, 30) + '...' : finalPrompt
+            });
+            setIsGenerating(false);
+            webSocketService.disconnect();
+          },
+          onError: (event: ErrorEvent) => {
+            // ERROR-001 Fix: Classify error and allow retry for temporary errors
+            const isTemporaryError = event.data.code === 'TIMEOUT' ||
+              event.data.code === 'RATE_LIMIT' ||
+              event.data.code === 'TEMPORARY';
+            setWsError(event.data.message);
+            setThinkingSteps(prev => {
+              if (prev.length > 0) {
+                const updated = [...prev];
+                updated[updated.length - 1].status = 'error';
+                return updated;
+              }
+              return prev;
+            });
+            setIsGenerating(false);
+            // Only disconnect for permanent errors
+            if (!isTemporaryError) {
+              webSocketService.disconnect();
+            }
+          }
+        });
+
+        if (!connected) {
+          throw new Error('无法建立WebSocket连接，请确认已登录');
+        }
+
+        // Call backend API
+        const payload = copywritingService.createRequest(
+          finalPrompt,
+          [finalPrompt],
+          undefined
+        );
+        const response = await copywritingService.startGeneration(payload);
+
+        webSocketService.setWorkflowId(response.workflowId);
+
+        // Keep generating state until WebSocket result arrives
+        return;
+
+      } catch (error: any) {
+        console.error('Copywriting generation failed:', error);
+        setWsError(error.message || '生成失败');
+        setConnectionStatus('error');
+        webSocketService.disconnect();
+        // Fall through to legacy path
+      }
+    }
+
+    // Legacy path for non-TEXT types or when copywriting fails
     try {
       const response = await generateContent(finalPrompt, type);
       setResult({
@@ -155,6 +293,7 @@ const App: React.FC = () => {
         onProjectClick={openAssetDetail}
         onUpgradeClick={() => setIsPricingModalOpen(true)}
         onProfileClick={() => setIsUserProfileModalOpen(true)}
+        onLogout={handleLogout}
         selectedProjectName={selectedAsset?.title}
       />
 
@@ -319,11 +458,26 @@ const App: React.FC = () => {
                   </div>
                 )}
 
+                {/* Thinking Log for TEXT generation */}
+                {activeGenerationType === GenerationType.TEXT && (thinkingSteps.length > 0 || connectionStatus !== 'disconnected') && (
+                  <div className="flex justify-start w-full animate-fade-in-up">
+                    <div className="flex-1 max-w-[85%] md:max-w-[80%]">
+                      <ThinkingLog
+                        steps={thinkingSteps}
+                        connectionStatus={connectionStatus}
+                        isComplete={isThinkingComplete}
+                        errorMessage={wsError || undefined}
+                        onRetry={() => handleGenerate(GenerationType.TEXT, userMessage || '')}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {(result || isGenerating) && (
                   <div className="flex justify-start w-full animate-fade-in-up">
                     <div className="flex-1 max-w-[85%] md:max-w-[80%]">
                       <GeminiResult
-                        isGenerating={isGenerating}
+                        isGenerating={isGenerating && !thinkingSteps.length}
                         pendingType={activeGenerationType}
                         result={result}
                         userMessage={null}
@@ -379,6 +533,7 @@ const App: React.FC = () => {
         )}
 
         {currentView === 'gallery' && <Gallery onGenerateNew={() => navigateTo('home')} onAssetClick={openAssetDetail} />}
+
         {currentView === 'projects' && <Projects onNewProject={() => navigateTo('home')} onAssetClick={openAssetDetail} />}
         {currentView === 'insights' && <Insights />}
         {currentView === 'settings' && <Settings />}

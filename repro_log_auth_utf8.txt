@@ -1,0 +1,29 @@
+﻿Starting enhanced reproduction script with Auth...
+Navigating to http://localhost:3000...
+BROWSER [log]: [WebSocket] Cleaned up
+BROWSER [error]: Failed to load resource: the server responded with a status of 404 (Not Found)
+Detected Login Page. Attempting to Register...
+Filling Registration Form...
+node : Script Failed: locator.f
+ill: Timeout 30000ms exceeded.
+所在位置 行:1 字符: 1
++ node reproduce_issue.cjs > re
+pro_log_auth.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          :  
+   NotSpecified: (Script Fail  
+  ed: ...000ms exceeded.:Str   
+ ing) [], RemoteException
+    + FullyQualifiedErrorId :  
+   NativeCommandError
+ 
+Call log:
+[2m  - waiting for getByPlaceh
+older(/Email/i)[22m
+
+    at F:\AAA Work\AIproject\E_
+Business\reproduce_issue.cjs:66
+:30 {
+  name: 'TimeoutError'
+}

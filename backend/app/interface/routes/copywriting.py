@@ -108,6 +108,7 @@ async def get_workflow_status(workflow_id: str) -> WorkflowStatusResponse:
         status=workflow_state.get("status", "unknown"),
         current_stage=workflow_state.get("current_stage"),
         final_copy=workflow_state.get("state", {}).get("final_copy"),
+        error=workflow_state.get("error"),
     )
 
 

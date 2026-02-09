@@ -5,9 +5,11 @@ Provides text generation using DeepSeek's API with support for
 both synchronous and streaming responses.
 """
 import logging
+import os
+from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict, Optional
 
-from app.core.config import settings
+from app.core.config import get_settings  # Import function instead of instance
 from app.core.http_client import BaseHTTPClient
 from app.domain.entities.generation import (
     GenerationRequest,
@@ -20,6 +22,97 @@ logger = logging.getLogger(__name__)
 
 # Type alias for streaming callback
 StreamCallback = Callable[[StreamChunk], Awaitable[None]]
+
+# Backward-compatible test hook:
+# tests may patch `deepseek.settings`; production path uses get_settings().
+settings = None
+
+
+def _resolve_settings():
+    """Return patched settings in tests, otherwise load runtime settings."""
+    if settings is not None:
+        return settings
+    # FORCE REFRESH: bypass lru_cache if possible or just call it
+    # Ideally we'd want to clear cache if key is missing, but for now let's just log
+    s = get_settings()
+    if not s.deepseek_api_key:
+        logger.warning(f"Settings loaded in DeepSeekGenerator has NO API KEY. CWD: {os.getcwd()}")
+    return s
+
+
+def _candidate_env_files() -> list[Path]:
+    """Build likely .env locations for runtime fallback loading."""
+    backend_dir = Path(__file__).resolve().parents[3]
+    project_dir = backend_dir.parent
+    cwd = Path.cwd().resolve()
+    return [
+        backend_dir / ".env",
+        project_dir / ".env",
+        cwd / ".env",
+        cwd / "backend" / ".env",
+    ]
+
+
+def _read_api_key_from_env_file(env_file: Path) -> Optional[str]:
+    """Parse DEEPSEEK_API_KEY from a .env file without extra dependencies."""
+    if not env_file.exists():
+        return None
+    try:
+        for raw_line in env_file.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if key.strip() == "DEEPSEEK_API_KEY":
+                parsed = value.strip().strip("'\"")
+                return parsed or None
+    except OSError:
+        return None
+    return None
+
+
+def _resolve_api_key(
+    explicit_api_key: Optional[str],
+    settings_obj: Any,
+    allow_fallback: bool,
+) -> Optional[str]:
+    """Resolve API key from explicit arg/settings and optional runtime fallback.
+    
+    Priority order:
+    1. Explicit parameter
+    2. Direct environment variable (most reliable for async tasks)
+    3. Settings object
+    4. Fallback .env file parsing
+    """
+    # 1. Explicit parameter has highest priority
+    if explicit_api_key:
+        return explicit_api_key
+
+    # 2. Direct environment variable - most reliable for async tasks
+    env_key = os.getenv("DEEPSEEK_API_KEY")
+    if env_key:
+        return env_key
+
+    # 3. Settings object
+    settings_key = getattr(settings_obj, "deepseek_api_key", None)
+    if settings_key:
+        return settings_key
+
+    # Keep unit-test behavior deterministic when settings is monkeypatched.
+    if not allow_fallback:
+        return None
+
+    # 4. Fallback: parse .env files directly
+    for env_file in _candidate_env_files():
+        file_key = _read_api_key_from_env_file(env_file)
+        if file_key:
+            logger.warning(
+                "DeepSeek API key recovered from fallback env path: %s",
+                env_file,
+            )
+            return file_key
+
+    return None
 
 
 class DeepSeekGenerator:
@@ -67,21 +160,35 @@ class DeepSeekGenerator:
     ):
         """
         Initialize DeepSeek generator.
-        
+
         Args:
             api_key: DeepSeek API key (defaults to settings.deepseek_api_key)
             model: Model name (defaults to settings.deepseek_model)
             max_tokens: Max tokens (defaults to settings.deepseek_max_tokens)
             timeout: Request timeout (defaults to settings.deepseek_timeout)
         """
-        self.api_key = api_key or settings.deepseek_api_key
-        self.model = model or settings.deepseek_model or self.DEFAULT_MODEL
-        self.max_tokens = max_tokens or settings.deepseek_max_tokens or self.DEFAULT_MAX_TOKENS
-        self.timeout = timeout or settings.deepseek_timeout or self.DEFAULT_TIMEOUT
-        
+        # Call get_settings() dynamically instead of using cached module globals.
+        settings_obj = _resolve_settings()
+
+        self.api_key = _resolve_api_key(
+            explicit_api_key=api_key,
+            settings_obj=settings_obj,
+            allow_fallback=(settings is None),
+        )
+        self.model = model or settings_obj.deepseek_model or self.DEFAULT_MODEL
+        self.max_tokens = max_tokens or settings_obj.deepseek_max_tokens or self.DEFAULT_MAX_TOKENS
+        self.timeout = timeout or settings_obj.deepseek_timeout or self.DEFAULT_TIMEOUT
+
         if not self.api_key:
+            logger.error(
+                f"DeepSeek API key not found. "
+                f"Settings has key: {bool(getattr(settings_obj, 'deepseek_api_key', None))}, "
+                f"CWD: {Path.cwd()}"
+            )
             raise ValueError("DeepSeek API key is required")
-        
+
+        logger.info("DeepSeekGenerator initialized with API key suffix: ***%s", self.api_key[-4:])
+
         self._client: Optional[BaseHTTPClient] = None
     
     async def __aenter__(self) -> "DeepSeekGenerator":
