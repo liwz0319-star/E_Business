@@ -22,9 +22,30 @@ class Base(DeclarativeBase):
     pass
 
 
+def convert_to_async_url(database_url: str) -> str:
+    """
+    Convert synchronous database URL to async URL.
+
+    Render provides postgresql:// URLs but we need postgresql+asyncpg://
+    for async SQLAlchemy.
+
+    Args:
+        database_url: Original database URL
+
+    Returns:
+        Async-compatible database URL
+    """
+    if database_url.startswith("postgresql://"):
+        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return database_url
+
+
+# Convert URL for async engine
+async_database_url = convert_to_async_url(settings.database_url)
+
 # Create async engine
 engine = create_async_engine(
-    settings.database_url,
+    async_database_url,
     echo=settings.debug,
     pool_pre_ping=True,
     pool_size=5,
