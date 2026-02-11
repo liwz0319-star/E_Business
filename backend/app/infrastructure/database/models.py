@@ -210,9 +210,10 @@ class ProductPackageModel(Base):
     )  # {score: 0.9, issues: [], suggestions: []}
 
     # 审计字段
-    user_id: Mapped[str] = mapped_column(
-        String(255),
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
+        index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

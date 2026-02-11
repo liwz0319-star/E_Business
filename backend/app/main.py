@@ -17,7 +17,7 @@ from app.core.config import get_settings
 from app.core.factory import ProviderFactory
 from app.infrastructure.database import close_db, init_db
 from app.infrastructure.generators import DeepSeekGenerator
-from app.interface.routes import auth_router, copywriting_router, images_router
+from app.interface.routes import auth_router, copywriting_router, images_router, product_packages_router
 from app.interface.routes.debug import router as debug_router
 from app.interface.ws import socket_manager
 
@@ -128,6 +128,7 @@ fastapi_app.add_middleware(
 fastapi_app.include_router(auth_router, prefix="/api/v1")
 fastapi_app.include_router(copywriting_router, prefix="/api/v1")
 fastapi_app.include_router(images_router, prefix="/api/v1")
+fastapi_app.include_router(product_packages_router, prefix="/api/v1")
 fastapi_app.include_router(debug_router, prefix="/api/v1")
 
 

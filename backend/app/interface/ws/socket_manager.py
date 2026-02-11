@@ -256,10 +256,31 @@ class SocketManager:
     def get_user_id(self, sid: str) -> Optional[str]:
         """Get user ID for a socket ID."""
         return self._connected_users.get(sid)
-    
+
     def get_connected_count(self) -> int:
         """Get number of connected clients."""
         return len(self._connected_users)
+
+    async def broadcast(
+        self,
+        payload: Dict[str, Any],
+        namespace: str = "/agents",
+    ) -> None:
+        """
+        Broadcast a generic event payload to all connected clients.
+
+        Args:
+            payload: Event payload with type, workflowId, data, timestamp
+            namespace: Socket.IO namespace
+        """
+        try:
+            event_type = payload.get("type")
+            if event_type:
+                event_name = f"agent:{event_type}"
+                await self.sio.emit(event_name, payload, namespace=namespace)
+                logger.debug(f"Broadcasted {event_name}: workflow_id={payload.get('workflowId')}")
+        except Exception as e:
+            logger.error(f"Failed to broadcast event: {e}")
 
 
 # Singleton instance
