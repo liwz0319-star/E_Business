@@ -1,0 +1,50 @@
+# Render 配置文件
+# https://render.com/docs/yaml-spec
+
+services:
+  # 类型：Web Service
+  - type: web
+
+    # 服务名称
+    name: e-business-api
+
+    # 运行时环境
+    runtime: python
+
+    # 构建命令
+    buildCommand: pip install -r requirements.txt
+
+    # 启动命令
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    # 工作目录（相对于仓库根目录）
+    workingDir: backend
+
+    # 健康检查
+    healthCheckPath: /health
+
+    # 环境变量（可以在 Render Dashboard 中覆盖）
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: LANGCHAIN_TRACING_V2
+        value: true
+      - key: LANGCHAIN_PROJECT
+        value: e-business
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: false
+
+    # 实例类型
+    plan: free
+
+    # 自动部署
+    autoDeploy: true
+
+# 数据库服务（可选）
+databases:
+  - name: e-business-db
+    databaseName: e_business
+    user: e_business_user
+    plan: free
