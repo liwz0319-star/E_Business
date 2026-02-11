@@ -147,6 +147,24 @@ class Settings(BaseSettings):
     def mcp_allowed_domains_set(self) -> set:
         """Parse allowed domains string to set."""
         return {domain.strip() for domain in self.mcp_allowed_domains.split(",") if domain.strip()}
+
+    # LangSmith Configuration
+    langchain_tracing_v2: bool = Field(
+        default=False,
+        description="Enable LangSmith tracing"
+    )
+    langchain_api_key: Optional[str] = Field(
+        default=None,
+        description="LangSmith API key"
+    )
+    langchain_project: str = Field(
+        default="e-business",
+        description="LangSmith project name"
+    )
+    langchain_endpoint: str = Field(
+        default="https://api.smith.langchain.com",
+        description="LangSmith API endpoint"
+    )
     
     @field_validator("app_env")
     @classmethod

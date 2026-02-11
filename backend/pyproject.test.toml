@@ -1,0 +1,40 @@
+"""
+Pytest 配置文件
+
+专门用于测试配置
+"""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# 输出选项
+addopts = [
+    "-v",                    # 详细输出
+    "--strict-markers",      # 严格标记
+    "--tb=short",            # 简短回溯
+    "--asyncio-mode=auto",   # 自动异步模式
+]
+
+# 标记定义
+markers = [
+    "unit: 单元测试",
+    "integration: 集成测试",
+    "e2e: 端到端测试",
+    "slow: 慢速测试",
+    "websocket: WebSocket 测试",
+]
+
+# 异步模式
+asyncio_mode = "auto"
+
+# 最小 Python 版本
+minversion = "7.0"
+
+# 过滤警告
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]

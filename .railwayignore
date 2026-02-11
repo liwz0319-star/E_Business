@@ -1,0 +1,66 @@
+# Railway 忽略文件
+# 防止不必要的文件上传到 Railway
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+.venv
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 日志
+*.log
+
+# 环境变量（敏感信息）
+.env.local
+.env.*.local
+
+# 文档
+docs/
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+
+# Node
+node_modules/
+frontend/
+dist/

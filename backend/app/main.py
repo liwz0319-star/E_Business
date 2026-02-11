@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.factory import ProviderFactory
+from app.core.langchain_init import init_langsmith, get_langsmith_config
 from app.infrastructure.database import close_db, init_db
 from app.infrastructure.generators import DeepSeekGenerator
 from app.interface.routes import auth_router, copywriting_router, images_router, product_packages_router
@@ -93,6 +94,21 @@ async def lifespan(app: FastAPI):
         # Fail fast to prevent runtime errors later
         raise ValueError("DeepSeek API key is required but not found in settings!")
 
+    print("="*50 + "\n")
+
+    # Initialize LangSmith
+    print("\n" + "="*50)
+    print("LANGSMITH INITIALIZATION")
+    print("="*50)
+    langsmith_initialized = init_langsmith()
+    langsmith_config = get_langsmith_config()
+    print(f"LangSmith Enabled: {langsmith_config['enabled']}")
+    print(f"LangSmith Project: {langsmith_config['project']}")
+    print(f"LangSmith API Key Configured: {langsmith_config['api_key_configured']}")
+    if langsmith_initialized:
+        print("LangSmith tracing is ACTIVE")
+    else:
+        print("LangSmith tracing is NOT active (check configuration)")
     print("="*50 + "\n")
 
     await init_db()

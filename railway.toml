@@ -1,0 +1,34 @@
+# Railway 配置文件
+# https://docs.railway.app/reference/configuration
+
+[build]
+builder = "NIXPACKS"
+
+# 构建命令
+[build.nixpacks]
+# 使用 Python 3.11
+provider = "python"
+
+# 构建时的命令
+build-command = "pip install -r requirements.txt"
+
+# 启动命令
+[start-command]
+cmd = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+# 环境变量
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# 服务配置
+[[services]]
+name = "E-Business API"
+description = "AI-Powered E-Business Content Generation Platform"
+
+# 端口配置
+[[services.ports]]
+port = 8000
+type = "HTTP"
