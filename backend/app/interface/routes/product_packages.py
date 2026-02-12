@@ -47,6 +47,7 @@ async def get_orchestrator(
     # For now, create a simple instance
     from app.application.agents.copywriting_agent import CopywritingAgent
     from app.application.agents.image_agent import ImageAgent
+    from app.application.tools.storage_tools import StorageTools
 
     tools = ToolRegistry.create_default(
         llm_client=None,  # TODO: inject
@@ -54,6 +55,9 @@ async def get_orchestrator(
     )
 
     repository = ProductPackageRepository(session)
+
+    # Register storage tools with repository
+    tools.register("storage", StorageTools(repository))
 
     # Create agents
     copywriting_agent = CopywritingAgent()

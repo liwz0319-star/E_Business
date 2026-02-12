@@ -120,8 +120,8 @@ class ProductPackageRepository:
 
         # Set completed_at if transitioning to completed
         if status == "completed" and package.completed_at is None:
-            from datetime import datetime, timezone
-            package.completed_at = datetime.now(timezone.utc)
+            from datetime import datetime
+            package.completed_at = datetime.utcnow()
 
         await self._session.flush()
         await self._session.refresh(package)

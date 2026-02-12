@@ -193,22 +193,22 @@ async def auth_token(async_client: AsyncClient) -> str:
     # 注册用户
     register_data = {
         "email": f"test-{uuid4()}@example.com",
-        "password": "testpass123",
+        "password": "TestPass123",
     }
 
-    await async_client.post("/api/v1/auth/register", json=register_data)
+    await async_client.post("/api/v1/auth/signup", json=register_data)
 
     # 登录获取 token
     login_data = {
-        "username": register_data["email"],
+        "email": register_data["email"],
         "password": register_data["password"],
     }
 
     response = await async_client.post(
         "/api/v1/auth/login",
-        data=login_data
+        json=login_data
     )
 
     assert response.status_code == 200
     token_data = response.json()
-    return token_data["access_token"]
+    return token_data["accessToken"]

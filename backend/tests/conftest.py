@@ -15,7 +15,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.infrastructure.database import Base, get_async_session
-from app.main import app
+from app.main import fastapi_app
 
 
 # Use PostgreSQL test database
@@ -70,7 +70,7 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
                 await session.close()
     
     # Override the dependency
-    app.dependency_overrides[get_async_session] = override_get_async_session
+    fastapi_app.dependency_overrides[get_async_session] = override_get_async_session
     
     # Create tables
     async with test_engine.begin() as conn:
@@ -78,16 +78,16 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
         await conn.run_sync(Base.metadata.create_all)
     
     # Create client
-    transport = ASGITransport(app=app)
+    transport = ASGITransport(app=fastapi_app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
-    
+
     # Drop tables after test
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    
+
     # Clear overrides
-    app.dependency_overrides.clear()
+    fastapi_app.dependency_overrides.clear()
     
     # Properly dispose the engine
     await test_engine.dispose()
@@ -126,6 +126,10 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     # Drop tables after test
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    
+
     # Properly dispose the engine
     await test_engine.dispose()
+
+
+# Alias for backward compatibility
+async_session = db_session
