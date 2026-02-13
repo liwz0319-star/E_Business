@@ -1,0 +1,17 @@
+﻿ .claude/settings.local.json                        |   3 +-
+ _bmad-output/implementation-artifacts/plan.md      | 413 +++++----------------
+ _bmad-output/implementation-artifacts/plan2.md     | 119 +++---
+ .../implementation-artifacts/sprint-status.yaml    |  10 +
+ _bmad/_config/files-manifest.csv                   |   6 +-
+ _bmad/_config/ides/claude-code.yaml                |   2 +-
+ _bmad/_config/ides/codex.yaml                      |   2 +-
+ _bmad/_config/manifest.yaml                        |   4 +-
+ _bmad/bmm/config.yaml                              |   2 +-
+ _bmad/core/config.yaml                             |   2 +-
+ .../198a46ecb467_add_name_to_productpackage.py     |  24 +-
+ backend/app/infrastructure/database/models.py      |  46 ++-
+ backend/app/interface/dependencies/auth.py         |  35 +-
+ backend/app/interface/routes/__init__.py           |   3 +-
+ backend/app/main.py                                |   5 +-
+ backend/tests/conftest.py                          | 103 ++++-
+ 16 files changed, 355 insertions(+), 424 deletions(-)

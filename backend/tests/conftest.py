@@ -38,7 +38,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """
     Create async HTTP client for integration tests.
-    
+
     Creates a fresh engine and tables for each test to avoid connection pool conflicts.
     """
     # Create a fresh engine for each test
@@ -48,7 +48,7 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
         future=True,
         pool_pre_ping=True,
     )
-    
+
     test_async_session_maker = async_sessionmaker(
         test_engine,
         class_=AsyncSession,
@@ -56,31 +56,39 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
         autocommit=False,
         autoflush=False,
     )
-    
+
+    # Hold a session for the test duration
+    test_session: AsyncSession | None = None
+
     async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
         """Override dependency to use test database session."""
-        async with test_async_session_maker() as session:
-            try:
-                yield session
-                await session.commit()
-            except Exception:
-                await session.rollback()
-                raise
-            finally:
-                await session.close()
-    
+        nonlocal test_session
+        # Create or reuse the session
+        if test_session is None:
+            test_session = test_async_session_maker()
+        try:
+            yield test_session
+            await test_session.commit()
+        except Exception:
+            await test_session.rollback()
+            raise
+
     # Override the dependency
     fastapi_app.dependency_overrides[get_async_session] = override_get_async_session
-    
+
     # Create tables
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Create client
     transport = ASGITransport(app=fastapi_app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+    # Close the test session
+    if test_session is not None:
+        await test_session.close()
 
     # Drop tables after test
     async with test_engine.begin() as conn:
@@ -88,7 +96,70 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
 
     # Clear overrides
     fastapi_app.dependency_overrides.clear()
-    
+
+    # Properly dispose the engine
+    await test_engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def async_client_with_session() -> AsyncGenerator[tuple[AsyncClient, AsyncSession], None]:
+    """
+    Create async HTTP client with a shared database session.
+
+    This fixture returns both the client and a session that can be used
+    to create test data that will be visible to the API.
+    """
+    # Create a fresh engine for each test
+    test_engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        future=True,
+        pool_pre_ping=True,
+    )
+
+    test_async_session_maker = async_sessionmaker(
+        test_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autocommit=False,
+        autoflush=False,
+    )
+
+    # Create a shared session
+    shared_session = test_async_session_maker()
+
+    async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
+        """Override dependency to use shared test database session."""
+        try:
+            yield shared_session
+            await shared_session.commit()
+        except Exception:
+            await shared_session.rollback()
+            raise
+
+    # Override the dependency
+    fastapi_app.dependency_overrides[get_async_session] = override_get_async_session
+
+    # Create tables
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+    # Create client
+    transport = ASGITransport(app=fastapi_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client, shared_session
+
+    # Close the session
+    await shared_session.close()
+
+    # Drop tables after test
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+    # Clear overrides
+    fastapi_app.dependency_overrides.clear()
+
     # Properly dispose the engine
     await test_engine.dispose()
 

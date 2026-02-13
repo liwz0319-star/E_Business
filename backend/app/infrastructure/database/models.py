@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, text
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, text, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -64,14 +64,19 @@ class UserModel(Base):
 class VideoAssetModel(Base):
     """
     SQLAlchemy model for video_assets table.
-    
-    Stores metadata for generated images and videos.
-    Despite the name "video_assets", this table stores both
-    image and video assets as specified in the architecture.
+
+    Stores metadata for generated images, videos, and text (copy) assets.
+    Despite the name "video_assets", this table stores all asset types
+    as specified in the architecture (Single Table Inheritance pattern).
+
+    Asset Types:
+    - 'image': Generated product images
+    - 'video': Generated ad videos
+    - 'text': Generated marketing copy/text
     """
-    
+
     __tablename__ = "video_assets"
-    
+
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
@@ -100,9 +105,17 @@ class VideoAssetModel(Base):
         nullable=False,
         default="image",
     )
-    url: Mapped[str] = mapped_column(
+    title: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    content: Mapped[Optional[str]] = mapped_column(
         Text,
-        nullable=False,
+        nullable=True,
+    )
+    url: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
     )
     prompt: Mapped[str] = mapped_column(
         Text,
@@ -144,12 +157,20 @@ class VideoAssetModel(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<VideoAsset(id={self.id}, type={self.asset_type}, url={self.url[:50]}...)>"
+        url_preview = self.url[:50] if self.url else "None"
+        return f"<VideoAsset(id={self.id}, type={self.asset_type}, url={url_preview}...)>"
 
 
 class ProductPackageModel(Base):
     """产品包聚合根 - 工作流执行主记录"""
     __tablename__ = "product_packages"
+
+    # 定义索引
+    __table_args__ = (
+        Index('ix_product_packages_created_at', 'created_at'),
+        Index('ix_product_packages_status', 'status'),
+        Index('ix_product_packages_user_id_created_at', 'user_id', 'created_at'),
+    )
 
     id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -162,6 +183,11 @@ class ProductPackageModel(Base):
         unique=True,
         index=True,
         nullable=False,
+    )
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        server_default=text("''"),
     )
     status: Mapped[str] = mapped_column(
         String(50),

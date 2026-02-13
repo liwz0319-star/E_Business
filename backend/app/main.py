@@ -18,7 +18,8 @@ from app.core.factory import ProviderFactory
 from app.core.langchain_init import init_langsmith, get_langsmith_config
 from app.infrastructure.database import close_db, init_db
 from app.infrastructure.generators import DeepSeekGenerator
-from app.interface.routes import auth_router, copywriting_router, images_router, product_packages_router
+from app.interface.routes import auth_router, copywriting_router, images_router, product_packages_router, assets_router
+from app.interface.routes.projects import router as projects_router
 from app.interface.routes.debug import router as debug_router
 from app.interface.ws import socket_manager
 
@@ -145,6 +146,8 @@ fastapi_app.include_router(auth_router, prefix="/api/v1")
 fastapi_app.include_router(copywriting_router, prefix="/api/v1")
 fastapi_app.include_router(images_router, prefix="/api/v1")
 fastapi_app.include_router(product_packages_router, prefix="/api/v1")
+fastapi_app.include_router(projects_router, prefix="/api/v1")
+fastapi_app.include_router(assets_router, prefix="/api/v1")
 fastapi_app.include_router(debug_router, prefix="/api/v1")
 
 

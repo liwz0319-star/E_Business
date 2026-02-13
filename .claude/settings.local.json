@@ -64,7 +64,8 @@
       "mcp__chrome-devtools__get_network_request",
       "mcp__chrome-devtools__fill",
       "mcp__chrome-devtools__wait_for",
-      "mcp__chrome-devtools__evaluate_script"
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__codex-cli-mcp-tool__help"
     ]
   },
   "enableAllProjectMcpServers": true,

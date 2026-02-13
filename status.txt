@@ -1,0 +1,57 @@
+﻿On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .claude/settings.local.json
+	modified:   _bmad-output/implementation-artifacts/plan.md
+	modified:   _bmad-output/implementation-artifacts/plan2.md
+	modified:   _bmad-output/implementation-artifacts/sprint-status.yaml
+	modified:   _bmad/_config/files-manifest.csv
+	modified:   _bmad/_config/ides/claude-code.yaml
+	modified:   _bmad/_config/ides/codex.yaml
+	modified:   _bmad/_config/manifest.yaml
+	modified:   _bmad/bmm/config.yaml
+	modified:   _bmad/core/config.yaml
+	modified:   backend/app/alembic/versions/198a46ecb467_add_name_to_productpackage.py
+	modified:   backend/app/infrastructure/database/models.py
+	modified:   backend/app/interface/dependencies/auth.py
+	modified:   backend/app/interface/routes/__init__.py
+	modified:   backend/app/main.py
+	modified:   backend/tests/conftest.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	_bmad-output/implementation-artifacts/6-1-project-management-api.md
+	_bmad-output/implementation-artifacts/6-2-asset-gallery-api.md
+	_bmad-output/implementation-artifacts/6-3-user-settings-profile.md
+	_bmad-output/implementation-artifacts/6-4-analytics-service.md
+	_bmad-output/implementation-artifacts/epic-6-user-dashboard.md
+	backend/app/alembic/versions/004_add_product_packages_indexes.py
+	backend/app/alembic/versions/005_add_title_content_to_video_assets.py
+	backend/app/application/dtos/asset_dtos.py
+	backend/app/application/dtos/project_dtos.py
+	backend/app/application/services/
+	backend/app/application/use_cases/project_management.py
+	backend/app/domain/entities/asset.py
+	backend/app/domain/entities/product_package.py
+	backend/app/domain/interfaces/asset_repository.py
+	backend/app/domain/interfaces/project_repository.py
+	backend/app/infrastructure/repositories/asset_repository.py
+	backend/app/infrastructure/repositories/project_repository.py
+	backend/app/interface/routes/assets.py
+	backend/app/interface/routes/projects.py
+	backend/error_log.txt
+	backend/tests/test_asset_repository.py
+	backend/tests/test_asset_service.py
+	backend/tests/test_assets_api.py
+	backend/tests/test_domain_entities.py
+	backend/tests/test_models.py
+	backend/tests/test_project_management.py
+	backend/tests/test_project_repository.py
+	backend/tests/test_projects_api.py
+	diff.txt
+	status.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

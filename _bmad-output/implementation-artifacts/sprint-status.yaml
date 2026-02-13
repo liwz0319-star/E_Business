@@ -61,3 +61,13 @@ development_status:
   5-2-retrieval-tool-implementation: backlog
   5-3-rag-enhanced-generation: backlog
   epic-5-retrospective: optional
+
+  epic-6: in-progress
+  6-1-project-management-api: review
+  6-2-asset-gallery-api: review # 2026-02-13 All tasks completed, 26 tests passing
+  6-3-user-settings-profile: ready-for-dev
+  6-4-analytics-service: ready-for-dev
+  6-5-frontend-projects-integration: backlog
+  6-6-frontend-gallery-integration: backlog
+  6-7-frontend-settings-insights-integration: backlog
+  epic-6-retrospective: optional
