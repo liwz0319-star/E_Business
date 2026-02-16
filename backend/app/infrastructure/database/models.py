@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, text, Index
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, text, Index, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -159,6 +159,75 @@ class VideoAssetModel(Base):
     def __repr__(self) -> str:
         url_preview = self.url[:50] if self.url else "None"
         return f"<VideoAsset(id={self.id}, type={self.asset_type}, url={url_preview}...)>"
+
+
+class UserSettingsModel(Base):
+    """
+    SQLAlchemy model for user_settings table.
+
+    Stores user preferences for AI generation and platform integrations.
+    One-to-one relationship with users table.
+    """
+
+    __tablename__ = "user_settings"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    language: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        default="en-US",
+    )
+    tone: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="professional",
+    )
+    aspect_ratio: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        default="1:1",
+    )
+    shopify_config: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=lambda: {"connected": False},
+    )
+    amazon_config: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=lambda: {"connected": False},
+    )
+    tiktok_config: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=lambda: {"connected": False},
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.utcnow(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.utcnow(),
+        onupdate=lambda: datetime.utcnow(),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserSettings(id={self.id}, user_id={self.user_id}, language={self.language})>"
 
 
 class ProductPackageModel(Base):

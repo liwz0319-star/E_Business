@@ -1,6 +1,6 @@
 # Story 6.3: User Settings & Profile
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -97,43 +97,43 @@ VALID_ASPECT_RATIOS = ["1:1", "4:3", "3:4", "16:9", "9:16"]
 
 ## Tasks / Subtasks
 
-- [ ] **Infrastructure Layer**: Create Database Schema
-    - [ ] Create `UserSettingsModel` in `app/infrastructure/database/models.py`.
-    - [ ] Fields: `id`, `user_id` (FK to users, unique), `language`, `tone`, `aspect_ratio`, `shopify_config` (JSON), `amazon_config` (JSON), `tiktok_config` (JSON), `created_at`, `updated_at`.
-    - [ ] Create Alembic migration script (`alembic revision --autogenerate -m "add_user_settings_table"`).
-    - [ ] Apply migration (`alembic upgrade head`).
+- [x] **Infrastructure Layer**: Create Database Schema
+    - [x] Create `UserSettingsModel` in `app/infrastructure/database/models.py`.
+    - [x] Fields: `id`, `user_id` (FK to users, unique), `language`, `tone`, `aspect_ratio`, `shopify_config` (JSON), `amazon_config` (JSON), `tiktok_config` (JSON), `created_at`, `updated_at`.
+    - [x] Create Alembic migration script (`alembic revision --autogenerate -m "add_user_settings_table"`).
+    - [x] Apply migration (`alembic upgrade head`).
 
-- [ ] **Domain Layer**: Create Entities and Interfaces
-    - [ ] Create `UserSettings` domain entity in `app/domain/entities/user_settings.py`.
-    - [ ] Create `IUserSettingsRepository` interface in `app/domain/interfaces/user_settings_repository.py`.
+- [x] **Domain Layer**: Create Entities and Interfaces
+    - [x] Create `UserSettings` domain entity in `app/domain/entities/user_settings.py`.
+    - [x] Create `IUserSettingsRepository` interface in `app/domain/interfaces/user_settings_repository.py`.
 
-- [ ] **Infrastructure Layer**: Implement Repository
-    - [ ] Create `UserSettingsRepository` implementing `IUserSettingsRepository`.
-    - [ ] Implement `get_by_user_id(user_id)` - returns settings or None.
-    - [ ] Implement `get_or_create(user_id)` - returns existing or creates with defaults.
-    - [ ] Implement `update(user_id, updates)` - partial update with merge.
-    - [ ] Add unit tests for repository methods.
+- [x] **Infrastructure Layer**: Implement Repository
+    - [x] Create `UserSettingsRepository` implementing `IUserSettingsRepository`.
+    - [x] Implement `get_by_user_id(user_id)` - returns settings or None.
+    - [x] Implement `get_or_create(user_id)` - returns existing or creates with defaults.
+    - [x] Implement `update(user_id, updates)` - partial update with merge.
+    - [x] Add unit tests for repository methods.
 
-- [ ] **Application Layer**: Create DTOs and Service
-    - [ ] Create `UserSettingsDTOs` in `app/application/dtos/user_settings_dtos.py`.
-    - [ ] Create `AIPreferencesDTO`, `IntegrationConfigDTO`, `UserSettingsResponseDTO`.
-    - [ ] Create `UpdateUserSettingsRequestDTO` for PATCH body.
-    - [ ] Create `UserSettingsService` with `get_settings` and `update_settings` use cases.
-    - [ ] Implement field mapping logic (snake_case to camelCase nesting).
+- [x] **Application Layer**: Create DTOs and Service
+    - [x] Create `UserSettingsDTOs` in `app/application/dtos/user_settings_dtos.py`.
+    - [x] Create `AIPreferencesDTO`, `IntegrationConfigDTO`, `UserSettingsResponseDTO`.
+    - [x] Create `UpdateUserSettingsRequestDTO` for PATCH body.
+    - [x] Create `UserSettingsService` with `get_settings` and `update_settings` use cases.
+    - [x] Implement field mapping logic (snake_case to camelCase nesting).
 
-- [ ] **Interface Layer**: Create API Endpoints
-    - [ ] Create `app/interface/routes/user_settings.py` (following existing route patterns).
-    - [ ] Implement `GET /api/v1/user/settings` with auth dependency.
-    - [ ] Implement `PATCH /api/v1/user/settings` with validation.
-    - [ ] Register router in `app/interface/routes/__init__.py` and `main.py`.
+- [x] **Interface Layer**: Create API Endpoints
+    - [x] Create `app/interface/routes/user_settings.py` (following existing route patterns).
+    - [x] Implement `GET /api/v1/user/settings` with auth dependency.
+    - [x] Implement `PATCH /api/v1/user/settings` with validation.
+    - [x] Register router in `app/interface/routes/__init__.py` and `main.py`.
 
-- [ ] **Testing**:
-    - [ ] Create `tests/test_user_settings_repository.py` for repository tests.
-    - [ ] Create `tests/test_user_settings_service.py` for service tests.
-    - [ ] Create `tests/test_user_settings_api.py` for API integration tests.
-    - [ ] Test get default settings (lazy creation).
-    - [ ] Test partial updates (only provided fields updated).
-    - [ ] Test validation (invalid language/tone/aspect_ratio rejected).
+- [x] **Testing**:
+    - [x] Create `tests/test_user_settings_repository.py` for repository tests.
+    - [x] Create `tests/test_user_settings_service.py` for service tests.
+    - [x] Create `tests/test_user_settings_api.py` for API integration tests.
+    - [x] Test get default settings (lazy creation).
+    - [x] Test partial updates (only provided fields updated).
+    - [x] Test validation (invalid language/tone/aspect_ratio rejected).
 
 ## Dev Notes
 
@@ -434,14 +434,57 @@ app.include_router(user_settings.router, prefix="/api/v1/user", tags=["user-sett
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude (claude-5-sonnet)
 
 ### Debug Log References
 
+None - clean implementation following TDD methodology.
+
 ### Completion Notes List
 
+**2026-02-14 Implementation Summary:**
+
+All 5 acceptance criteria satisfied:
+1. ✅ Database Schema Extension - `user_settings` table created with One-to-One relationship to `users`, storing AI preferences and integration status. Settings are lazy-created on first access.
+2. ✅ GET /api/v1/user/settings - Returns current user's settings with default values if none exist. Response format matches Settings.tsx expectations with camelCase nested objects.
+3. ✅ PATCH /api/v1/user/settings - Partial updates supported. Only provided fields are updated. Full validation of language, tone, and aspect_ratio values.
+4. ✅ Security - All endpoints require JWT authentication via `get_current_user` dependency. Users can only access their own settings.
+5. ✅ Error Handling - Returns 401 for unauthenticated requests, 422 for validation errors.
+
+**Test Coverage:**
+- 36 tests passing (5 model tests, 10 repository tests, 8 service tests, 13 API tests)
+- All validation tests pass for invalid language/tone/aspect_ratio
+- Partial update tests verify only provided fields are updated
+- Lazy creation tests verify default settings on first access
+
+**Architecture:**
+- Followed Pragmatic Clean Architecture pattern
+- Domain layer: UserSettings entity, IUserSettingsRepository interface (pure Python)
+- Application layer: UserSettingsService with DTOs using Pydantic v2 with camelCase aliases
+- Infrastructure layer: UserSettingsModel (SQLAlchemy), PostgresUserSettingsRepository
+- Interface layer: FastAPI routes with JWT auth dependency
+
 ### File List
+
+**New Files:**
+- `backend/app/domain/entities/user_settings.py` - UserSettings domain entity
+- `backend/app/domain/interfaces/user_settings_repository.py` - IUserSettingsRepository interface
+- `backend/app/infrastructure/repositories/user_settings_repository.py` - PostgresUserSettingsRepository
+- `backend/app/application/dtos/user_settings_dtos.py` - Request/Response DTOs with camelCase aliases
+- `backend/app/application/services/user_settings_service.py` - UserSettingsService
+- `backend/app/interface/routes/user_settings.py` - API endpoints
+- `backend/app/alembic/versions/006_create_user_settings_table.py` - Database migration
+- `backend/tests/test_user_settings_model.py` - Model tests (5 tests)
+- `backend/tests/test_user_settings_repository.py` - Repository tests (10 tests)
+- `backend/tests/test_user_settings_service.py` - Service tests (8 tests)
+- `backend/tests/test_user_settings_api.py` - API integration tests (13 tests)
+
+**Modified Files:**
+- `backend/app/infrastructure/database/models.py` - Added UserSettingsModel
+- `backend/app/interface/routes/__init__.py` - Added user_settings_router
+- `backend/app/main.py` - Registered user_settings_router
 
 ## Change Log
 
 - 2026-02-13: Story created by SM (Bob) - YOLO mode with comprehensive context analysis
+- 2026-02-14: Implementation completed by Dev Agent (Amelia) - All 5 ACs satisfied, 36 tests passing

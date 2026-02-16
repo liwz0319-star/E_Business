@@ -239,7 +239,7 @@ const Insights: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-[18px] text-text-muted">
-                            {asset.platform === 'Shopify' ? 'shopping_bag' : asset.platform === 'TikTok' ? 'play_circle' : 'store'}
+                            {asset.platform === 'Shopify' ? 'shopping_bag' : asset.platform === 'TikTok' ? 'play_circle' : asset.platform === 'AI Generated' ? 'auto_awesome' : 'store'}
                           </span>
                           <span className="text-text-main dark:text-white text-sm">{asset.platform}</span>
                         </div>

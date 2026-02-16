@@ -1,6 +1,6 @@
 # Story 6.4: Analytics Service (Basic)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -62,43 +62,43 @@ so that **I can track my usage, productivity, and the impact of my generated con
 
 ## Tasks / Subtasks
 
-- [ ] **Domain Layer**:
-    - [ ] Create `app/domain/entities/analytics.py` (optional, DTOs may suffice for efficient aggregation).
-    - [ ] Define `KPIStats`, `ActivityData`, `TopAsset` pure data structures if complex logic needed.
+- [x] **Domain Layer**:
+    - [x] Create `app/domain/entities/analytics.py` (optional, DTOs may suffice for efficient aggregation).
+    - [x] Define `KPIStats`, `ActivityData`, `TopAsset` pure data structures if complex logic needed.
 
-- [ ] **Application Layer**:
-    - [ ] Create `app/application/dtos/analytics_dtos.py`.
-        - [ ] `StatItemDTO`: `{ label: str, value: str, trend: str, icon: str, highlight?: bool }`
-        - [ ] `ChartPointDTO`: `{ date: str, value: int }`
-        - [ ] `TopAssetDTO`: `{ id: str, name: str, created: str, platform: str, type: str, score: int, img?: str }`
-    - [ ] Create `app/application/services/analytics_service.py`.
-        - [ ] Implement `get_stats(user_id)`: Aggregate counts + mock metrics calculation.
-        - [ ] Implement `get_charts(user_id, days=30)`: SQL aggregation + date filling.
-        - [ ] Implement `get_top_assets(user_id, limit=5)`: Fetch recent assets + mock scores.
+- [x] **Application Layer**:
+    - [x] Create `app/application/dtos/analytics_dtos.py`.
+        - [x] `StatItemDTO`: `{ label: str, value: str, trend: str, icon: str, highlight?: bool }`
+        - [x] `ChartPointDTO`: `{ date: str, value: int }`
+        - [x] `TopAssetDTO`: `{ id: str, name: str, created: str, platform: str, type: str, score: int, img?: str }`
+    - [x] Create `app/application/services/analytics_service.py`.
+        - [x] Implement `get_stats(user_id)`: Aggregate counts + mock metrics calculation.
+        - [x] Implement `get_charts(user_id, days=30)`: SQL aggregation + date filling.
+        - [x] Implement `get_top_assets(user_id, limit=5)`: Fetch recent assets + mock scores.
 
-- [ ] **Infrastructure Layer**:
-    - [ ] Create `AnalyticsRepository` in `app/infrastructure/repositories/analytics_repository.py`.
-        - [ ] `count_projects(user_id)`: COUNT query on ProductPackageModel.
-        - [ ] `count_assets(user_id)`: COUNT query on VideoAssetModel.
-        - [ ] `get_daily_activity(user_id, days)`: GROUP BY date aggregation.
-        - [ ] `get_recent_assets(user_id, limit)`: Fetch top N recent assets.
+- [x] **Infrastructure Layer**:
+    - [x] Create `AnalyticsRepository` in `app/infrastructure/repositories/analytics_repository.py`.
+        - [x] `count_projects(user_id)`: COUNT query on ProductPackageModel.
+        - [x] `count_assets(user_id)`: COUNT query on VideoAssetModel.
+        - [x] `get_daily_activity(user_id, days)`: GROUP BY date aggregation.
+        - [x] `get_recent_assets(user_id, limit)`: Fetch top N recent assets.
 
-- [ ] **Interface Layer**:
-    - [ ] Create `app/interface/routes/insights.py`.
-        - [ ] `GET /api/v1/insights/stats` - Returns `List[StatItemDTO]`
-        - [ ] `GET /api/v1/insights/charts?days=30` - Returns `List[ChartPointDTO]`
-        - [ ] `GET /api/v1/insights/top-assets?limit=5` - Returns `List[TopAssetDTO]`
-    - [ ] Register router in `app/interface/routes/__init__.py` and `main.py`.
+- [x] **Interface Layer**:
+    - [x] Create `app/interface/routes/insights.py`.
+        - [x] `GET /api/v1/insights/stats` - Returns `List[StatItemDTO]`
+        - [x] `GET /api/v1/insights/charts?days=30` - Returns `List[ChartPointDTO]`
+        - [x] `GET /api/v1/insights/top-assets?limit=5` - Returns `List[TopAssetDTO]`
+    - [x] Register router in `app/interface/routes/__init__.py` and `main.py`.
 
-- [ ] **Testing**:
-    - [ ] Create `tests/test_analytics_api.py`.
-    - [ ] `test_get_stats_success`: 验证返回 4 个 KPI 项，每项包含 label/value/trend/icon
-    - [ ] `test_get_stats_unauthorized`: 验证无 token 返回 401
-    - [ ] `test_get_charts_returns_30_days`: 验证返回 30 个数据点
-    - [ ] `test_get_charts_date_format`: 验证日期格式为 YYYY-MM-DD
-    - [ ] `test_get_charts_fills_missing_dates`: 验证空日期填充 0
-    - [ ] `test_get_top_assets_max_5`: 验证最多返回 5 条记录
-    - [ ] `test_get_top_assets_structure`: 验证包含 id/name/created/platform/type/score 字段
+- [x] **Testing**:
+    - [x] Create `tests/test_analytics_api.py`.
+    - [x] `test_get_stats_success`: 验证返回 4 个 KPI 项，每项包含 label/value/trend/icon
+    - [x] `test_get_stats_unauthorized`: 验证无 token 返回 401
+    - [x] `test_get_charts_returns_30_days`: 验证返回 30 个数据点
+    - [x] `test_get_charts_date_format`: 验证日期格式为 YYYY-MM-DD
+    - [x] `test_get_charts_fills_missing_dates`: 验证空日期填充 0
+    - [x] `test_get_top_assets_max_5`: 验证最多返回 5 条记录
+    - [x] `test_get_top_assets_structure`: 验证包含 id/name/created/platform/type/score 字段
 
 ## Dev Notes
 
@@ -260,15 +260,41 @@ class TopAssetDTO(BaseModel):
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude (claude-3-5-sonnet)
 
 ### Debug Log References
 
+N/A - Implementation completed without blocking issues.
+
 ### Completion Notes List
+
+- **2026-02-14**: Story 6-4 Analytics Service implementation completed
+  - Implemented hybrid data approach: real DB aggregations + mock metrics
+  - Created 3 API endpoints: `/stats`, `/charts`, `/top-assets`
+  - All 20 tests passing including authentication, validation, and response format tests
+  - Followed existing repository and service patterns from Stories 6-1 and 6-2
+  - DTOs use camelCase aliases for frontend compatibility
 
 ### File List
 
+**New Files:**
+- `backend/app/application/dtos/analytics_dtos.py` - DTOs for analytics responses
+- `backend/app/application/services/analytics_service.py` - Analytics business logic
+- `backend/app/infrastructure/repositories/analytics_repository.py` - Analytics data access
+- `backend/app/interface/routes/insights.py` - API routes for insights endpoints
+- `backend/tests/test_analytics_api.py` - Comprehensive test suite (20 tests)
+
+**Modified Files:**
+- `backend/app/interface/routes/__init__.py` - Added insights_router export
+- `backend/app/main.py` - Registered insights_router with FastAPI app
+
 ## Change Log
+
+- 2026-02-14: Story implementation completed
+  - All tasks/subtasks completed with passing tests (20 tests)
+  - Status updated to "review"
+  - File List updated with all new and modified files
+  - Dev Agent Record updated with completion notes
 
 - 2026-02-13: Story updated based on review feedback
   - Updated AC1: Changed `/stats` response from object to array format matching frontend

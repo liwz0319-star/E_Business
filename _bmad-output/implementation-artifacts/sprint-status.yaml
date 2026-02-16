@@ -65,9 +65,9 @@ development_status:
   epic-6: in-progress
   6-1-project-management-api: review
   6-2-asset-gallery-api: review # 2026-02-13 All tasks completed, 26 tests passing
-  6-3-user-settings-profile: ready-for-dev
-  6-4-analytics-service: ready-for-dev
-  6-5-frontend-projects-integration: backlog
-  6-6-frontend-gallery-integration: backlog
-  6-7-frontend-settings-insights-integration: backlog
+  6-3-user-settings-profile: review # 2026-02-14 All tasks completed, 36 tests passing
+  6-4-analytics-service: review # 2026-02-14 All tasks completed, 20 tests passing
+  6-5-frontend-projects-integration: ready-for-dev # 2026-02-14 Story created by SM
+  6-6-frontend-gallery-integration: ready-for-dev
+  6-7-frontend-settings-insights-integration: ready-for-dev # 2026-02-16 Story created by SM
   epic-6-retrospective: optional

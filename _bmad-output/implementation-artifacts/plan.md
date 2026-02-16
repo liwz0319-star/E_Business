@@ -1,99 +1,84 @@
-﻿# Story 6-1 代码审查记录与修复交接
+# Story 6-3 代码审查记录与修复交接
 
-- 审查对象: `_bmad-output/implementation-artifacts/6-1-project-management-api.md`
-- 审查方式: 仅审查 Story 6-1 直接相关代码与测试，忽略其他故事改动
-- 审查时间: 2026-02-13
-- 当前结论: `Changes Requested`（存在 HIGH/MEDIUM 问题，暂不建议合并）
+## 范围
+- 审查对象: Story 6-3（User Settings & Profile）
+- 审查文件:
+  - `backend/app/infrastructure/repositories/user_settings_repository.py`
+  - `backend/app/application/services/user_settings_service.py`
+  - `backend/app/application/dtos/user_settings_dtos.py`
+  - `backend/app/interface/routes/user_settings.py`
+  - `backend/tests/test_user_settings_repository.py`
+  - `backend/tests/test_user_settings_service.py`
+  - `backend/tests/test_user_settings_api.py`
 
-## 1) 关键问题清单（按优先级）
+## 测试基线（审查时）
+- 命令:
+  - `cd backend && poetry run pytest -q tests/test_user_settings_model.py tests/test_user_settings_repository.py tests/test_user_settings_service.py tests/test_user_settings_api.py`
+- 结果:
+  - `36 passed, 1 warning`
 
-### HIGH-1: AC2 未完整实现（删除项目未级联删除关联资产）
-- 要求证据:
-  - `_bmad-output/implementation-artifacts/6-1-project-management-api.md:21`
-  - `_bmad-output/implementation-artifacts/6-1-project-management-api.md:168`
-- 代码现状:
-  - `backend/app/infrastructure/repositories/project_repository.py:97`
-  - `backend/app/infrastructure/repositories/project_repository.py:108`
-- 说明: 当前只删除 `product_packages` 记录，未看到对关联资产（如 `video_assets`）的清理逻辑。
+## 发现（按严重度）
 
-### HIGH-2: Alembic 迁移链存在重复建索引风险（静态推断）
-- 证据:
-  - `backend/app/alembic/versions/003_sync_product_packages_schema.py:49`
-  - `backend/app/alembic/versions/003_sync_product_packages_schema.py:50`
-  - `backend/app/alembic/versions/198a46ecb467_add_name_to_productpackage.py:33`
-  - `backend/app/alembic/versions/004_add_product_packages_indexes.py:33`
-- 说明: 多个 migration 对同名索引重复创建，完整升级链可能失败（需通过真实升级验证）。
+### 1. 高风险: `get_or_create` 并发竞态可能导致 500 ✅ 已修复
+- 位置:
+  - `backend/app/infrastructure/repositories/user_settings_repository.py:92`
+  - `backend/app/infrastructure/repositories/user_settings_repository.py:121`
+- 问题:
+  - 逻辑为"先查后建"，首次并发访问同一用户时，后到请求可能撞唯一约束失败。
+  - 路由层将异常包装为 500，影响稳定性。
+- 影响:
+  - AC2（首次访问返回默认设置）在并发下不稳定。
+- **修复方案**:
+  - 新增 `_create_with_race_handling` 方法，捕获 `IntegrityError` 后回查并返回已存在记录
+  - 添加 `from sqlalchemy.exc import IntegrityError` import
 
-### HIGH-3: Story 勾选与实现不一致（Use Case 单测缺失）
-- 要求证据:
-  - `_bmad-output/implementation-artifacts/6-1-project-management-api.md:84`
-- 现状: `backend/tests` 中未检索到 `ListProjectsUseCase/DeleteProjectUseCase/...` 的直接单测。
+### 2. 中风险: 空 PATCH 也触发更新，偏离"仅更新显式字段" ✅ 已修复
+- 位置:
+  - `backend/app/application/services/user_settings_service.py:72`
+  - `backend/app/application/services/user_settings_service.py:108`
+  - `backend/app/infrastructure/repositories/user_settings_repository.py:193`
+- 问题:
+  - 请求体 `{}` 仍会走 `update`，并刷新 `updated_at`。
+- 影响:
+  - 与 AC3 "Only updates fields that are explicitly provided" 不一致。
+- **修复方案**:
+  - service 层在 `updates` 为空时直接返回当前 settings（no-op），不进入 update
 
-### MEDIUM-1: 测试并非全绿，与“29 tests all passing”不一致
-- Story 声明证据:
-  - `_bmad-output/implementation-artifacts/6-1-project-management-api.md`（Completion Notes）
-- 实测命令:
-  - `cd backend && poetry run pytest -q tests/test_project_repository.py tests/test_projects_api.py`
-- 实测结果:
-  - `1 failed, 28 passed`
-  - 失败点: `backend/tests/test_projects_api.py:85`（期望 401，实际 403）
+### 3. 中风险: integration 局部更新被 `connected` 必填约束阻断 ✅ 已修复
+- 位置:
+  - `backend/app/application/dtos/user_settings_dtos.py:70`
+- 问题:
+  - `IntegrationConfigDTO.connected` 为必填，导致仅更新 `storeName/region/accountName` 时返回 422。
+- 影响:
+  - 与 partial update 语义不完全一致。
+- **修复方案**:
+  - 将 `IntegrationConfigDTO.connected` 设为 `Optional[bool]`，默认 None
+  - service 层使用 `exclude_none=True` 确保仅更新提供的字段
 
-### MEDIUM-2: Story File List 与工作区事实不一致
-- Story 证据:
-  - `_bmad-output/implementation-artifacts/6-1-project-management-api.md:391`
-  - `_bmad-output/implementation-artifacts/6-1-project-management-api.md:395`
-- 现状: `git status --porcelain` 显示多个 6-1 文件为 `??`（未跟踪），与“已存在/已验证”描述不一致。
+### 4. 低风险: 关键回归测试缺口 ✅ 已补充
+- 位置:
+  - `backend/tests/test_user_settings_repository.py:103`
+  - `backend/tests/test_user_settings_api.py:159`
+  - `backend/tests/test_user_settings_api.py:229`
+- 缺口:
+  - ~~缺少并发首次创建（唯一约束冲突回退）测试~~
+  - ~~缺少空 PATCH 行为测试~~
+  - ~~缺少仅 integration 扩展字段更新测试~~
+- **补充测试**:
+  - `TestUserSettingsRepositoryConcurrency` - 并发处理和幂等性测试
+  - `test_update_integration_extension_fields_only` - 仅更新扩展字段
+  - `test_update_settings_empty_patch_no_op` - 空 PATCH 不触发更新
+  - `test_update_settings_empty_nested_objects_no_op` - 空嵌套对象不触发更新
+  - `test_update_settings_integration_extension_fields_only` - API 层扩展字段更新
 
-### LOW-1: DTO 可变默认值
-- 证据:
-  - `backend/app/application/dtos/project_dtos.py:58`
-- 说明: `artifacts: dict = {}` 建议改为 `Field(default_factory=dict)`。
+## 修复后测试结果
+- 命令:
+  - `cd backend && poetry run pytest -q tests/test_user_settings_model.py tests/test_user_settings_repository.py tests/test_user_settings_service.py tests/test_user_settings_api.py`
+- 结果:
+  - `44 passed, 1 warning` (从 36 个测试增加到 44 个)
 
-### LOW-2: total 统计查询存在可优化点
-- 证据:
-  - `backend/app/infrastructure/repositories/project_repository.py:74`
-- 说明: `count(subquery)` 复用了带排序查询，可在大数据量下产生额外开销。
-
-## 2) 修复交接（由其他 Agent 执行）
-
-> 本文件仅记录审查结论与交接，不在本轮直接修复代码。
-
-### 推荐接手 Agent
-- 主修复: `dev` agent
-- 状态与故事同步: `sm` agent（更新 story 状态、任务勾选与 sprint-status）
-
-### 交接执行顺序
-1. 先修复 HIGH（AC 与迁移链风险）
-2. 再修复 MEDIUM（测试全绿、文档一致性）
-3. 最后处理 LOW（代码质量优化）
-
-## 3) 可执行修复任务清单（给接手 Agent）
-
-- [ ] 实现并验证项目删除时的关联资产删除策略（按 `workflow_id` 或明确业务关联键）
-- [ ] 清理重复索引 migration（保证从 `002 -> 005` 全链可升级）
-- [ ] 为 `project_management.py` 增补 use case 单测（覆盖 AC1-4）
-- [ ] 统一未认证访问语义（401/403）并修正对应测试
-- [ ] 修正 Story File List 与 git 事实不一致项
-- [ ] 将 DTO 可变默认值改为 `default_factory`
-- [ ] 优化项目列表总数查询
-
-## 4) 验收标准
-
-- [ ] Story 6-1 的 AC1-AC5 全部可证明实现
-- [ ] 6-1 相关测试全通过（至少 repository + API + use case）
-- [ ] Alembic 全链升级成功且无重复索引异常
-- [ ] Story 文档中的 File List、Completion Notes 与 git 事实一致
-
-## 5) 建议验证命令
-
-```bash
-cd backend
-poetry run pytest -q tests/test_project_repository.py tests/test_projects_api.py
-poetry run pytest -q tests -k "project_management or projects"
-poetry run alembic upgrade head
-```
-
----
-
-记录人: `dev` agent（审查记录）
-处理策略: 后续修复交由其他 agent 执行
+## 修复状态: ✅ 全部完成
+- [x] 修复 repository 并发首次创建的唯一约束冲突处理
+- [x] 修复空 PATCH no-op 行为（不触发写入）
+- [x] 调整 integration 请求 DTO，支持仅扩展字段更新
+- [x] 补齐并发/空 PATCH/integration 局部更新测试
